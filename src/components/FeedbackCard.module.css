@@ -1,0 +1,197 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.modalContent {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 32px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.iconWrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+}
+
+.heading {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--foreground);
+  letter-spacing: -0.5px;
+}
+
+.subheading {
+  font-size: 14px;
+  color: var(--muted-foreground);
+  margin-top: 2px;
+}
+
+.highlight {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.starsContainer {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px 0 28px 0;
+}
+
+.starBtn {
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.starBtn:hover {
+  transform: scale(1.25);
+}
+
+.starIcon {
+  width: 42px;
+  height: 42px;
+  transition: color 0.2s ease, fill 0.2s ease;
+}
+
+.commentInput {
+  background: var(--secondary);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  font-size: 15px;
+  color: var(--foreground);
+  min-height: 100px;
+  resize: none;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.commentInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}
+
+.buttonRow {
+  display: flex;
+  gap: 12px;
+}
+
+.btn {
+  flex: 1;
+  height: 52px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnSecondary {
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+}
+
+.btnSecondary:hover {
+  background: var(--border);
+}
+
+.btnPrimary {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: var(--primary-dark);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+}
+
+.btnPrimary:disabled {
+  background: var(--border);
+  color: var(--muted-foreground);
+  cursor: not-allowed;
+}
+
+/* Success layout */
+.successContent {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 24px;
+}
+
+.successIconWrap {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--success);
+  margin-bottom: 24px;
+}
+
+.successTitle {
+  font-size: 24px;
+  font-weight: 850;
+  color: var(--foreground);
+  margin-bottom: 8px;
+}
+
+.successSubtitle {
+  font-size: 14px;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}

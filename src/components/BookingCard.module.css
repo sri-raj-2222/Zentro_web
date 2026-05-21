@@ -1,0 +1,125 @@
+.card {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.serviceInfo {
+  flex: 1;
+}
+
+.serviceLabel {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--foreground);
+  margin-bottom: 4px;
+}
+
+.date {
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+}
+
+.statusBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--border);
+  margin: 16px 0;
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detailRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+  color: var(--foreground);
+}
+
+.detailText {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mapBtn {
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.mapBtn:hover {
+  background-color: var(--primary-light);
+}
+
+.priceText {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  width: 100%;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.actionBtn:hover {
+  opacity: 0.9;
+}
+
+.actionBtn:active {
+  transform: scale(0.98);
+}

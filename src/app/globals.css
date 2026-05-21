@@ -1,0 +1,119 @@
+:root {
+  /* Zentro Brand Design System - Light Theme */
+  --background: #ffffff;
+  --foreground: #221212;
+  
+  --card: #ffffff;
+  --card-foreground: #221212;
+  
+  --primary: #ff4d4d;
+  --primary-foreground: #ffffff;
+  --primary-dark: #e63030;
+  --primary-light: #fff5f5;
+  
+  --secondary: #fff8f8;
+  --secondary-foreground: #5c3333;
+  
+  --muted: #faf0f0;
+  --muted-foreground: #a38585;
+  
+  --accent: #ffebe9;
+  --accent-foreground: #cc2424;
+  
+  --destructive: #ff3333;
+  --destructive-foreground: #ffffff;
+  
+  --success: #22c55e;
+  --success-foreground: #ffffff;
+  
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
+  
+  --border: #fae1e1;
+  --input: #fae1e1;
+  
+  --nav-bg: #ffffff;
+  --nav-text: #221212;
+  
+  --gradient-start: #ff4d4d;
+  --gradient-end: #ff7373;
+  
+  --radius: 14px;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(255, 77, 77, 0.08), 0 2px 4px -1px rgba(255, 77, 77, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(255, 77, 77, 0.08), 0 4px 6px -2px rgba(255, 77, 77, 0.04);
+}
+
+
+
+/* Global Reset & Base Styling */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  line-height: 1.5;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+input, select, textarea, button {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  outline: none;
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* Micro-animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s infinite ease-in-out;
+}

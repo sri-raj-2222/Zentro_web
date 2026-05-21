@@ -1,0 +1,393 @@
+.container {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 20px 80px 20px;
+  min-height: calc(100vh - 140px);
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 140px);
+  color: var(--muted-foreground);
+  gap: 16px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.header {
+  margin-bottom: 36px;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 12px;
+  transition: opacity 0.2s ease;
+}
+
+.backLink:hover {
+  opacity: 0.8;
+}
+
+.titleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 850;
+  color: var(--foreground);
+  letter-spacing: -1px;
+}
+
+.addBtn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  font-weight: 800;
+  padding: 12px 24px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+
+.addBtn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+}
+
+.subtitle {
+  font-size: 15px;
+  color: var(--muted-foreground);
+  margin-top: 6px;
+  max-width: 680px;
+  line-height: 1.5;
+}
+
+/* Add Subtype inline Form */
+.addForm {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 36px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.addForm h3 {
+  font-size: 16px;
+  font-weight: 850;
+  color: var(--foreground);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formGroup label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+}
+
+.selectInput, .inputField {
+  background: var(--accent);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 650;
+  outline: none;
+}
+
+.selectInput:focus, .inputField:focus {
+  border-color: var(--primary);
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.cancelBtn {
+  background: transparent;
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.submitBtn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  font-weight: 750;
+  padding: 10px 24px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* Baseline Pricing Grid */
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 850;
+  color: var(--foreground);
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+
+.baseGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.baseCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.baseIconWrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.baseInfo {
+  flex: 1;
+}
+
+.baseInfo h4 {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--foreground);
+}
+
+.baseInfo p {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  margin-top: 2px;
+}
+
+.priceEditRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.priceInput {
+  background: var(--accent);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px;
+  width: 70px;
+  text-align: center;
+  font-weight: 700;
+  outline: none;
+}
+
+.priceInput:focus {
+  border-color: var(--primary);
+}
+
+.saveBtn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.saveBtn:hover {
+  background: var(--primary-dark);
+}
+
+/* Subtypes Matrix Tables columns */
+.matrixContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.matrixColumn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.matrixHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+
+.matrixHeader h3 {
+  font-size: 15px;
+  font-weight: 850;
+  color: var(--foreground);
+}
+
+.matrixList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.matrixItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  transition: all 0.2s ease;
+}
+
+.inactiveItem {
+  opacity: 0.6;
+}
+
+.matrixNameCol {
+  flex: 1;
+}
+
+.bold {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.subtext {
+  font-size: 10px;
+  color: var(--muted-foreground);
+  font-family: monospace;
+}
+
+.matrixControls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.subPriceInput {
+  background: var(--card);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 6px;
+  width: 60px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  outline: none;
+}
+
+.subPriceInput:focus {
+  border-color: var(--primary);
+}
+
+.subSaveBtn {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--border);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.subSaveBtn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.toggleBtn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: var(--muted-foreground);
+  transition: color 0.2s ease;
+}
+
+.toggleBtn.active {
+  color: #10b981;
+}

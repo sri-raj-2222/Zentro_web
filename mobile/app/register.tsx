@@ -1,0 +1,379 @@
+import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
+import * as Location from "expo-location";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { useAuth } from "@/context/AuthContext";
+import { useAddress } from "@/context/AddressContext";
+import { useColors } from "@/hooks/useColors";
+
+export default function RegisterScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { register } = useAuth();
+  const { addAddress } = useAddress();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [address, setAddress] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // Email regex for inline real-time validation
+  const isValidEmail = (text: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text);
+  };
+
+  const emailHasError = email.length > 0 && !isValidEmail(email);
+
+  // Address auto-fill using expo-location
+  async function handleAutoFillLocation() {
+    setError("");
+    setLoading(true);
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setError("Permission to access location was denied");
+        setLoading(false);
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+
+      // Reverse geocode via built-in Location API or direct Google API if configured
+      let reverseGeo = await Location.reverseGeocodeAsync({ latitude, longitude });
+      if (reverseGeo && reverseGeo.length > 0) {
+        const item = reverseGeo[0];
+        const readableAddress = [
+          item.streetNumber,
+          item.street,
+          item.city,
+          item.region,
+          item.postalCode,
+          item.country,
+        ]
+          .filter(Boolean)
+          .join(", ");
+
+        setAddress(readableAddress || `${latitude}, ${longitude}`);
+      } else {
+        setAddress(`${latitude}, ${longitude}`);
+      }
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (e: any) {
+      console.error("Location error:", e);
+      setError("Failed to fetch current location. Please enter it manually.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Validates the form and registers the user immediately
+  async function handleRegister() {
+    setError("");
+    if (!name.trim() || !email.trim() || !phone.trim() || !password || !address.trim()) {
+      setError("Please fill in all fields");
+      return;
+    }
+    if (emailHasError) {
+      setError("Please enter a valid email address");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await register(name, email.trim().toLowerCase(), phone, password, "user", address.trim());
+
+      if (result.success) {
+        // Create a default address item from the current location
+        try {
+          let lat = 0;
+          let lng = 0;
+          let city = "";
+          let state = "";
+          let country = "";
+          let postalCode = "";
+
+          const permission = await Location.getForegroundPermissionsAsync();
+          if (permission.granted) {
+            const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+            if (loc && loc.coords) {
+              lat = loc.coords.latitude;
+              lng = loc.coords.longitude;
+              const geo = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+              if (geo && geo.length > 0) {
+                const item = geo[0];
+                city = item.city || item.subregion || "";
+                state = item.region || "";
+                country = item.country || "";
+                postalCode = item.postalCode || "";
+              }
+            }
+          }
+          await addAddress({
+            fullAddress: address.trim(),
+            city,
+            state,
+            country,
+            pincode: postalCode,
+            latitude: lat,
+            longitude: lng,
+            isDefault: true,
+          });
+        } catch (err) {
+          console.error("Auto address creation failed on registration:", err);
+        }
+
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        router.replace("/(tabs)");
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        setError(`❌ ${result.error || "Registration failed. Please try again."}`);
+      }
+    } catch (e: any) {
+      setError(e.message || "An unexpected error occurred during registration.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <ScrollView
+          contentContainerStyle={[
+            styles.scroll,
+            {
+              paddingTop: insets.top + (Platform.OS === "web" ? 67 : 0),
+              paddingBottom: insets.bottom + 40,
+            },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Feather name="arrow-left" size={22} color={colors.foreground} />
+          </TouchableOpacity>
+
+          {/* Logo Area */}
+          <View style={styles.logoArea}>
+            <View style={styles.logoWrap}>
+              <Image
+                source={require("@/assets/images/zentro_logo.png")}
+                style={styles.logo}
+                contentFit="cover"
+              />
+            </View>
+          </View>
+
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: colors.foreground }]}>
+              🎉 Create Account
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+              Join Zentro today and get started
+            </Text>
+          </View>
+
+          <View style={styles.form}>
+            {/* Name Field */}
+            <View style={[styles.inputWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={styles.inputEmoji}>👤</Text>
+              <TextInput
+                style={[styles.input, { color: colors.foreground }]}
+                placeholder="Full name"
+                placeholderTextColor={colors.mutedForeground}
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
+            </View>
+
+            {/* Email Field with real-time error */}
+            <View style={[styles.inputWrap, { backgroundColor: colors.card, borderColor: emailHasError ? "#ef4444" : colors.border }]}>
+              <Text style={styles.inputEmoji}>📧</Text>
+              <TextInput
+                style={[styles.input, { color: colors.foreground }]}
+                placeholder="Email address"
+                placeholderTextColor={colors.mutedForeground}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoCorrect={false}
+              />
+            </View>
+            {emailHasError && (
+              <Text style={styles.inlineError}>⚠️ Please enter a valid email format</Text>
+            )}
+
+            {/* Phone Field */}
+            <View style={[styles.inputWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={styles.inputEmoji}>📱</Text>
+              <TextInput
+                style={[styles.input, { color: colors.foreground }]}
+                placeholder="Phone number"
+                placeholderTextColor={colors.mutedForeground}
+                value={phone}
+                onChangeText={setPhone}
+                autoCapitalize="none"
+                keyboardType="phone-pad"
+              />
+            </View>
+
+            {/* Complete Address Field with Auto Fill */}
+            <View style={[styles.inputWrap, { backgroundColor: colors.card, borderColor: colors.border, alignItems: "flex-start" }]}>
+              <Text style={[styles.inputEmoji, { marginTop: 4 }]}>🏠</Text>
+              <TextInput
+                style={[styles.input, { color: colors.foreground, minHeight: 48 }]}
+                placeholder="Street, City, State, Country, Zip/Postal Code"
+                placeholderTextColor={colors.mutedForeground}
+                value={address}
+                onChangeText={setAddress}
+                multiline
+                numberOfLines={2}
+              />
+            </View>
+            <TouchableOpacity
+              style={[styles.locationBtn, { borderColor: colors.primary }]}
+              onPress={handleAutoFillLocation}
+              activeOpacity={0.8}
+            >
+              <Feather name="map-pin" size={14} color={colors.primary} />
+              <Text style={[styles.locationBtnText, { color: colors.primary }]}>
+                Use Current Location
+              </Text>
+            </TouchableOpacity>
+
+            {/* Password Field */}
+            <View style={[styles.inputWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={styles.inputEmoji}>🔒</Text>
+              <TextInput
+                style={[styles.input, { color: colors.foreground }]}
+                placeholder="Password"
+                placeholderTextColor={colors.mutedForeground}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPw}
+              />
+              <TouchableOpacity onPress={() => setShowPw((v) => !v)}>
+                <Feather name={showPw ? "eye-off" : "eye"} size={18} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+            <TouchableOpacity
+              style={[styles.registerBtn, { backgroundColor: colors.primary }, loading && { opacity: 0.7 }]}
+              onPress={handleRegister}
+              disabled={loading}
+              activeOpacity={0.85}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.registerBtnText}>✨ Create Account</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.loginLink} onPress={() => router.back()}>
+              <Text style={[styles.loginLinkText, { color: colors.mutedForeground }]}>
+                Already have an account?{" "}
+                <Text style={{ color: colors.primary, fontWeight: "700" }}>Sign In</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  flex: { flex: 1 },
+  scroll: { flexGrow: 1, paddingHorizontal: 24 },
+  backBtn: { marginBottom: 8, padding: 4, alignSelf: "flex-start" },
+  logoArea: { alignItems: "center", marginBottom: 16 },
+  logoWrap: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    overflow: "hidden",
+    shadowColor: "#dc2626",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  logo: { width: 70, height: 70 },
+  header: { marginBottom: 24 },
+  title: { fontSize: 26, fontWeight: "800", letterSpacing: -0.5 },
+  subtitle: { fontSize: 14, marginTop: 4, lineHeight: 20 },
+  form: { gap: 12 },
+  inputWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    gap: 10,
+  },
+  inputEmoji: { fontSize: 18 },
+  input: { flex: 1, fontSize: 15 },
+  inlineError: { color: "#ef4444", fontSize: 12, marginTop: -4, paddingLeft: 4 },
+  errorText: { color: "#ef4444", fontSize: 13, textAlign: "center", marginTop: 4 },
+  registerBtn: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    borderRadius: 14,
+    marginTop: 4,
+  },
+  registerBtnText: { color: "#fff", fontSize: 16, fontWeight: "800" },
+  locationBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingVertical: 10,
+    gap: 8,
+    borderStyle: "dashed",
+    marginTop: -2,
+    marginBottom: 4,
+  },
+  locationBtnText: { fontSize: 13, fontWeight: "700" },
+  loginLink: { alignItems: "center", paddingVertical: 8 },
+  loginLinkText: { fontSize: 14 },
+});

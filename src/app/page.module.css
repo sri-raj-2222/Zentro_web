@@ -1,0 +1,193 @@
+.root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--background);
+}
+
+.hero {
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  padding: 80px 24px 60px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: #ffffff;
+  position: relative;
+}
+
+.logoWrap {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.logoIcon {
+  color: var(--primary);
+  width: 60px;
+  height: 60px;
+}
+
+.logoImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.appName {
+  font-size: 48px;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  margin-bottom: 8px;
+  line-height: 1.1;
+  color: #111111;
+}
+
+.tagline {
+  font-size: 16px;
+  font-weight: 500;
+  opacity: 0.9;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.waveDivider {
+  height: 40px;
+  background-color: var(--primary);
+  position: relative;
+}
+
+.waveBottom {
+  height: 40px;
+  background-color: var(--background);
+  border-top-left-radius: 36px;
+  border-top-right-radius: 36px;
+  width: 100%;
+}
+
+.content {
+  flex: 1;
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 20px 60px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 850;
+  color: var(--foreground);
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+
+.featuresGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.featureRow {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  gap: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  cursor: default;
+}
+
+.featureRow:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+}
+
+.featureEmoji {
+  font-size: 36px;
+  line-height: 1;
+}
+
+.featureText {
+  flex: 1;
+}
+
+.featureTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.featureDesc {
+  font-size: 13px;
+  color: var(--muted-foreground);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.featureCheck {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ctaSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.btnPrimary {
+  background: var(--primary);
+  color: #ffffff;
+  padding: 16px 40px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btnPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.45);
+  background: var(--primary-dark);
+}
+
+.loginLink {
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+
+.loginLinkText {
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.loginLinkText:hover {
+  opacity: 0.85;
+}

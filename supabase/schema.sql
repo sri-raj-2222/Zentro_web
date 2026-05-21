@@ -216,6 +216,12 @@ create policy "Admins can view/manage attendance" on public.attendance_records f
 drop policy if exists "Workers can view own attendance" on public.attendance_records;
 create policy "Workers can view own attendance" on public.attendance_records for select using (auth.uid() = worker_id);
 
+drop policy if exists "Workers can insert own attendance" on public.attendance_records;
+create policy "Workers can insert own attendance" on public.attendance_records for insert with check (auth.uid() = worker_id);
+
+drop policy if exists "Workers can update own attendance" on public.attendance_records;
+create policy "Workers can update own attendance" on public.attendance_records for update using (auth.uid() = worker_id);
+
 -- --------------------------------------------------------
 -- SEED DATA (Services)
 -- --------------------------------------------------------

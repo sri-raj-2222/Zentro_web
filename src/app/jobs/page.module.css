@@ -1,0 +1,183 @@
+.container {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 20px 80px 20px;
+  min-height: calc(100vh - 140px);
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 140px);
+  color: var(--muted-foreground);
+  gap: 16px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.headerRow {
+  margin-bottom: 32px;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 12px;
+  transition: opacity 0.2s ease;
+}
+
+.backLink:hover {
+  opacity: 0.8;
+}
+
+.titleArea {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 850;
+  color: var(--foreground);
+  letter-spacing: -1px;
+}
+
+.refreshBtn {
+  background: var(--card);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.refreshBtn:hover {
+  border-color: var(--primary);
+  background: var(--accent);
+}
+
+.subtitle {
+  font-size: 15px;
+  color: var(--muted-foreground);
+  margin-top: 6px;
+  max-width: 680px;
+  line-height: 1.5;
+}
+
+/* Status Banner styling */
+.statusBanner {
+  display: flex;
+  gap: 14px;
+  padding: 18px 24px;
+  border-radius: 20px;
+  margin-bottom: 32px;
+  border: 1px solid var(--border);
+}
+
+.statusBanner.available {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.statusBanner.available .infoIcon {
+  color: #10b981;
+}
+
+.statusBanner.busy {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.statusBanner.busy .infoIcon {
+  color: #ef4444;
+}
+
+.infoIcon {
+  margin-top: 2px;
+  min-width: 20px;
+}
+
+.bannerBold {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--foreground);
+}
+
+.bannerDesc {
+  font-size: 13px;
+  color: var(--muted-foreground);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* Grids and Cards */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Empty State */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  text-align: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+}
+
+.emptyIcon {
+  color: var(--muted-foreground);
+  margin-bottom: 16px;
+}
+
+.emptyState h3 {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--foreground);
+  margin-bottom: 6px;
+}
+
+.emptyState p {
+  font-size: 14px;
+  color: var(--muted-foreground);
+  max-width: 320px;
+}
