@@ -165,10 +165,14 @@ export default function AttendancePage() {
         <div className={styles.headerTitleWrap}>
           <Calendar className={styles.headerIcon} />
           <div>
-            <h1 className={styles.title}>Attendance & Commissions</h1>
+            <h1 className={styles.title}>Workers & Commissions</h1>
             <p className={styles.subtitle}>Manage worker shifts, mark daily sheets, and adjust payroll commission rates.</p>
           </div>
         </div>
+        <Link href="/admin/workers" className={styles.manageWorkersBtn}>
+          <Users size={16} />
+          <span>Manage Workers</span>
+        </Link>
       </header>
 
       <div className={styles.dashboardGrid}>

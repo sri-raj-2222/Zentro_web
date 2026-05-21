@@ -22,7 +22,8 @@ import {
   Briefcase, 
   Star,
   Users,
-  Compass
+  Compass,
+  UserPlus
 } from "lucide-react";
 import Link from "next/link";
 import styles from "./page.module.css";
@@ -404,9 +405,17 @@ export default function DashboardPage() {
 
     return (
       <div className={styles.section}>
-        <div className={styles.adminBanner}>
-          <h1>Admin Operations Control Panel</h1>
-          <p>Real-time booking dispatch system, price configuration, and worker overrides.</p>
+      <div className={styles.adminBanner}>
+          <div className={styles.adminBannerContent}>
+            <div>
+              <h1>Admin Operations Control Panel</h1>
+              <p>Real-time booking dispatch system, price configuration, and worker overrides.</p>
+            </div>
+            <Link href="/admin/workers" className={styles.manageWorkersBtn}>
+              <UserPlus size={18} />
+              <span>Manage Workers</span>
+            </Link>
+          </div>
         </div>
 
         <div className={styles.statsRowAdmin}>

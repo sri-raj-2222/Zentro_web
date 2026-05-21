@@ -29,7 +29,7 @@ export function Navbar() {
     if (user.role === "admin") {
       return [
         { label: "Dashboard", href: "/dashboard" },
-        { label: "Attendance", href: "/attendance" },
+        { label: "Workers", href: "/attendance" },
         { label: "Pricing Manager", href: "/charges" },
         { label: "Bookings", href: "/bookings" },
         { label: "Profile", href: "/profile" },
