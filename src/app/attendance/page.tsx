@@ -360,21 +360,25 @@ export default function AttendancePage() {
                     const record = monthlyRecords.find((r) => r.date === dateStr);
                     const statusConfig = record ? STATUS_OPTIONS.find((s) => s.id === record.status) : null;
                     
-                    // Determine if date is in the past
+                    // Determine if date should be disabled (future dates or older than 30 days)
                     const cellDate = new Date(selectedYear, selectedMonth - 1, dayNum);
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
-                    const isPast = cellDate < today;
+                    
+                    const thirtyDaysAgo = new Date(today);
+                    thirtyDaysAgo.setDate(today.getDate() - 30);
+                    
+                    const isDisabled = cellDate > today || cellDate < thirtyDaysAgo;
 
                     return (
                       <div key={dayNum} className={styles.calCellWrapper}>
                         <button
                           onClick={() => {
-                            if (!isPast) {
+                            if (!isDisabled) {
                               setActiveDayModal(dayNum);
                             }
                           }}
-                          className={`${styles.calendarDayCell} ${statusConfig ? "" : styles.unmarkedCell} ${isPast ? styles.calendarDayCellDisabled : ""}`}
+                          className={`${styles.calendarDayCell} ${statusConfig ? "" : styles.unmarkedCell} ${isDisabled ? styles.calendarDayCellDisabled : ""}`}
                           style={
                             statusConfig 
                               ? { border: `1.5px solid ${statusConfig.color}`, backgroundColor: `${statusConfig.bgColor}50` } 

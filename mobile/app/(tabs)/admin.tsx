@@ -706,7 +706,11 @@ export default function AdminScreen() {
                   const cellDate = new Date(selectedYear, selectedMonth - 1, day);
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
-                  const isPast = cellDate < today;
+                  
+                  const thirtyDaysAgo = new Date(today);
+                  thirtyDaysAgo.setDate(today.getDate() - 30);
+                  
+                  const isDisabled = cellDate > today || cellDate < thirtyDaysAgo;
                   
                   const status = getAttendanceForDay(selectedWorkerId, dateStr);
                   const statusConfig = STATUS_OPTIONS.find((s) => s.id === status);
@@ -718,10 +722,10 @@ export default function AdminScreen() {
                         {
                           backgroundColor: statusConfig ? statusConfig.color + "20" : colors.card,
                           borderColor: statusConfig ? statusConfig.color : colors.border,
-                          opacity: isPast ? 0.3 : 1,
+                          opacity: isDisabled ? 0.3 : 1,
                         },
                       ]}
-                      disabled={isPast}
+                      disabled={isDisabled}
                       onPress={() => {
                         Haptics.selectionAsync();
                         Alert.alert(

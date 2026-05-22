@@ -50,10 +50,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then(({ data: { session }, error }) => {
         if (error) {
           const msg = error.message.toLowerCase();
-          console.warn("Auth Session Warning:", error.message);
+          const isRefreshTokenError =
+            msg.includes("refresh_token_not_found") ||
+            msg.includes("invalid refresh token") ||
+            msg.includes("not found") ||
+            msg.includes("refresh token");
+
+          if (!isRefreshTokenError) {
+            console.warn("Auth Session Warning:", error.message);
+          }
           
-          if (msg.includes("refresh_token_not_found") || msg.includes("invalid refresh token") || msg.includes("not found")) {
-            supabase.auth.signOut().finally(() => {
+          if (isRefreshTokenError) {
+            supabase.auth.signOut({ scope: "local" }).finally(() => {
               setUser(null);
               setIsLoading(false);
             });

@@ -294,12 +294,12 @@ export default function DashboardPage() {
           <div className={styles.bannerControls}>
             <div className={styles.statusToggleWrap}>
               <span className={styles.statusLabelText}>Status:</span>
-              <button
-                onClick={() => updateWorkerStatus(user.id, workerStatus === "available" ? "busy" : "available")}
+              <span
                 className={`${styles.statusToggleBtn} ${workerStatus === "available" ? styles.available : styles.busy}`}
+                style={{ cursor: "default" }}
               >
                 {workerStatus === "available" ? "Available" : "Busy"}
-              </button>
+              </span>
             </div>
           </div>
         </div>
@@ -546,12 +546,6 @@ export default function DashboardPage() {
                     <span className={`${styles.statusToggleBadge} ${styles[worker.status]}`}>
                       {worker.status}
                     </span>
-                    <button
-                      onClick={() => updateWorkerStatus(worker.id, worker.status === "available" ? "busy" : "available")}
-                      className={styles.toggleWorkerBtn}
-                    >
-                      Toggle
-                    </button>
                   </div>
                 </div>
               ))}

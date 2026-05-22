@@ -293,8 +293,12 @@ export function BookingsProvider({ children }: { children: React.ReactNode }) {
       }
 
       const current = bookings.find((b) => b.id === bookingId);
-      if (current?.workerId && (status === "completed" || status === "cancelled")) {
-        updateWorkerStatus(current.workerId, "available").catch(() => {});
+      if (current?.workerId) {
+        if (status === "completed" || status === "cancelled") {
+          updateWorkerStatus(current.workerId, "available").catch(() => {});
+        } else if (status === "in_progress" || status === "accepted") {
+          updateWorkerStatus(current.workerId, "busy").catch(() => {});
+        }
       }
 
       setBookings((prev) =>
