@@ -31,7 +31,7 @@ export default function ProfileScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { user, logout, updateProfile } = useAuth();
+  const { user, logout, updateProfile, updatePassword } = useAuth();
   const { bookings } = useBookings();
   const { addresses, deleteAddress, setAddressDefault } = useAddress();
 
@@ -39,6 +39,12 @@ export default function ProfileScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [editedName, setEditedName] = useState(user?.name || "");
   const [editedPhone, setEditedPhone] = useState(user?.phone || "");
+
+  const [showPasswordFields, setShowPasswordFields] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   React.useEffect(() => {
     if (!user) {
@@ -61,6 +67,40 @@ export default function ProfileScreen() {
     if (result.success) {
       setIsEditing(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else {
+      Alert.alert("Update Failed", result.error || "Something went wrong");
+    }
+  }
+
+  async function handleChangePassword() {
+    if (!oldPassword.trim()) {
+      Alert.alert("Error", "Current password is required");
+      return;
+    }
+    if (!newPassword.trim()) {
+      Alert.alert("Error", "New password cannot be empty");
+      return;
+    }
+    if (newPassword.length < 6) {
+      Alert.alert("Error", "New password must be at least 6 characters long");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert("Error", "New passwords do not match");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    const result = await updatePassword(newPassword.trim(), oldPassword.trim());
+    setIsUpdatingPassword(false);
+
+    if (result.success) {
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setShowPasswordFields(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("Success", "Password updated successfully!");
     } else {
       Alert.alert("Update Failed", result.error || "Something went wrong");
     }
@@ -326,6 +366,121 @@ export default function ProfileScreen() {
           )}
         </TouchableOpacity>
       )}
+
+      {/* Change Password Section */}
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+          Change Password
+        </Text>
+      </View>
+
+      <View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border, padding: 16 }]}>
+        {!showPasswordFields ? (
+          <TouchableOpacity
+            style={[styles.passwordBtn, { backgroundColor: colors.primary }]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowPasswordFields(true);
+            }}
+          >
+            <Feather name="lock" size={16} color="#fff" />
+            <Text style={styles.passwordBtnText}>Modify Password</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={{ gap: 12 }}>
+            <View style={styles.formGroupMobile}>
+              <Text style={[styles.infoLabel, { color: colors.mutedForeground, marginBottom: 4 }]}>
+                Current Password
+              </Text>
+              <TextInput
+                style={[
+                  styles.infoInputMobile,
+                  {
+                    color: colors.foreground,
+                    borderColor: colors.border,
+                    backgroundColor: colors.secondary,
+                  },
+                ]}
+                value={oldPassword}
+                onChangeText={setOldPassword}
+                placeholder="Enter current password"
+                placeholderTextColor={colors.mutedForeground}
+                secureTextEntry
+              />
+            </View>
+
+            <View style={styles.formGroupMobile}>
+              <Text style={[styles.infoLabel, { color: colors.mutedForeground, marginBottom: 4 }]}>
+                New Password
+              </Text>
+              <TextInput
+                style={[
+                  styles.infoInputMobile,
+                  {
+                    color: colors.foreground,
+                    borderColor: colors.border,
+                    backgroundColor: colors.secondary,
+                  },
+                ]}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholder="Enter new password"
+                placeholderTextColor={colors.mutedForeground}
+                secureTextEntry
+              />
+            </View>
+
+            <View style={styles.formGroupMobile}>
+              <Text style={[styles.infoLabel, { color: colors.mutedForeground, marginBottom: 4 }]}>
+                Confirm New Password
+              </Text>
+              <TextInput
+                style={[
+                  styles.infoInputMobile,
+                  {
+                    color: colors.foreground,
+                    borderColor: colors.border,
+                    backgroundColor: colors.secondary,
+                  },
+                ]}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="Confirm new password"
+                placeholderTextColor={colors.mutedForeground}
+                secureTextEntry
+              />
+            </View>
+
+            <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
+              <TouchableOpacity
+                style={[styles.passwordBtn, { backgroundColor: colors.secondary, flex: 1 }]}
+                onPress={() => {
+                  setShowPasswordFields(false);
+                  setOldPassword("");
+                  setNewPassword("");
+                  setConfirmPassword("");
+                }}
+              >
+                <Text style={[styles.passwordBtnText, { color: colors.mutedForeground }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.passwordBtn, { backgroundColor: colors.primary, flex: 2 }]}
+                onPress={handleChangePassword}
+                disabled={isUpdatingPassword}
+              >
+                {isUpdatingPassword ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Feather name="check" size={16} color="#fff" />
+                    <Text style={styles.passwordBtnText}>Update Password</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </View>
 
       {/* Admin Charges / Settings Management */}
       {user.role === "admin" && (
@@ -605,5 +760,29 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     marginTop: 2,
+  },
+  formGroupMobile: {
+    marginBottom: 10,
+  },
+  infoInputMobile: {
+    fontSize: 14,
+    fontWeight: "600",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  passwordBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: 10,
+    gap: 8,
+  },
+  passwordBtnText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
   },
 });

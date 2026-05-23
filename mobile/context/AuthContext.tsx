@@ -32,7 +32,7 @@ interface AuthContextType {
   logout: () => void;
   sendResetOtp: (email: string) => Promise<{ success: boolean; error?: string }>;
   verifyResetOtp: (email: string, otp: string) => Promise<{ success: boolean; error?: string }>;
-  updatePassword: (password: string) => Promise<{ success: boolean; error?: string }>;
+  updatePassword: (password: string, oldPassword?: string) => Promise<{ success: boolean; error?: string }>;
   updateProfile: (name: string, phone: string) => Promise<{ success: boolean; error?: string }>;
 }
 
@@ -288,8 +288,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  async function updatePassword(password: string): Promise<{ success: boolean; error?: string }> {
+  async function updatePassword(password: string, oldPassword?: string): Promise<{ success: boolean; error?: string }> {
     try {
+      if (oldPassword) {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (!currentUser || !currentUser.email) {
+          return { success: false, error: "User session not found." };
+        }
+        
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: currentUser.email,
+          password: oldPassword,
+        });
+        
+        if (signInError) {
+          return { success: false, error: "Incorrect current password." };
+        }
+      }
+
       const { error } = await supabase.auth.updateUser({
         password,
       });

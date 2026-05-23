@@ -15,14 +15,15 @@ import {
   Star, 
   Check, 
   ArrowLeft,
-  Loader2
+  Loader2,
+  Lock
 } from "lucide-react";
 import Link from "next/link";
 import styles from "./page.module.css";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, isLoading: authLoading, updateProfile } = useAuth();
+  const { user, isLoading: authLoading, updateProfile, updatePassword } = useAuth();
   const { 
     addresses, 
     isLoading: addressLoading, 
@@ -36,6 +37,13 @@ export default function ProfilePage() {
   const [profileName, setProfileName] = useState("");
   const [profilePhone, setProfilePhone] = useState("");
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+
+  // Password edit fields
+  const [showPasswordFields, setShowPasswordFields] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   // Address creation form fields
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -90,6 +98,43 @@ export default function ProfilePage() {
       alert(err.message);
     } finally {
       setIsUpdatingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!oldPassword.trim()) {
+      alert("Current password is required.");
+      return;
+    }
+    if (!newPassword.trim()) {
+      alert("New password cannot be empty.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      alert("New password must be at least 6 characters long.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      alert("New passwords do not match.");
+      return;
+    }
+    setIsUpdatingPassword(true);
+    try {
+      const res = await updatePassword(newPassword.trim(), oldPassword.trim());
+      if (res.success) {
+        alert("Password updated successfully!");
+        setOldPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setShowPasswordFields(false);
+      } else {
+        alert("Failed to update password: " + res.error);
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -190,74 +235,162 @@ export default function ProfilePage() {
         }
       >
         {/* Profile Card & Info update form */}
-        <div className={styles.card}>
-          <div className={styles.profileHero}>
-            <div className={styles.avatar}>
-              {user.name.charAt(0).toUpperCase()}
-            </div>
-            <h2 className={styles.profileName}>{user.name}</h2>
-            <span className={styles.roleBadge}>{user.role.toUpperCase()}</span>
-            
-            {user.role === "worker" && (
-              <div className={styles.ratingInfo}>
-                <Star size={16} fill="#f59e0b" color="#f59e0b" />
-                <span>{user.average_rating ? user.average_rating.toFixed(1) : "0.0"} Rating</span>
-                <span className={styles.dot}>•</span>
-                <span>{user.total_feedbacks || 0} Jobs Completed</span>
+        <div className={styles.profileCol}>
+          <div className={styles.card}>
+            <div className={styles.profileHero}>
+              <div className={styles.avatar}>
+                {user.name.charAt(0).toUpperCase()}
               </div>
-            )}
+              <h2 className={styles.profileName}>{user.name}</h2>
+              <span className={styles.roleBadge}>{user.role.toUpperCase()}</span>
+              
+              {user.role === "worker" && (
+                <div className={styles.ratingInfo}>
+                  <Star size={16} fill="#f59e0b" color="#f59e0b" />
+                  <span>{user.average_rating ? user.average_rating.toFixed(1) : "0.0"} Rating</span>
+                  <span className={styles.dot}>•</span>
+                  <span>{user.total_feedbacks || 0} Jobs Completed</span>
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleUpdateProfile} className={styles.form}>
+              <div className={styles.formGroup}>
+                <label>
+                  <User size={14} />
+                  <span>Full Name</span>
+                </label>
+                <input
+                  type="text"
+                  value={profileName}
+                  onChange={(e) => setProfileName(e.target.value)}
+                  placeholder="Name"
+                  required
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>
+                  <Mail size={14} />
+                  <span>Email Address (Read-only)</span>
+                </label>
+                <input
+                  type="email"
+                  value={user.email}
+                  disabled
+                  className={styles.disabledInput}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>
+                  <Phone size={14} />
+                  <span>Contact Phone</span>
+                </label>
+                <input
+                  type="tel"
+                  value={profilePhone}
+                  onChange={(e) => setProfilePhone(e.target.value)}
+                  placeholder="Phone number"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isUpdatingProfile}
+                className={styles.updateBtn}
+              >
+                {isUpdatingProfile ? <Loader2 size={16} className="animate-spin" /> : "Save Changes"}
+              </button>
+            </form>
           </div>
 
-          <form onSubmit={handleUpdateProfile} className={styles.form}>
-            <div className={styles.formGroup}>
-              <label>
-                <User size={14} />
-                <span>Full Name</span>
-              </label>
-              <input
-                type="text"
-                value={profileName}
-                onChange={(e) => setProfileName(e.target.value)}
-                placeholder="Name"
-                required
-              />
+          {/* Change Password Card */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <h3 style={{ margin: 0 }}>Change Password</h3>
             </div>
+            {!showPasswordFields ? (
+              <button
+                type="button"
+                onClick={() => setShowPasswordFields(true)}
+                className={styles.updateBtn}
+                style={{ width: "100%" }}
+              >
+                <Lock size={16} />
+                <span>Modify Password</span>
+              </button>
+            ) : (
+              <form onSubmit={handleChangePassword} className={styles.form}>
+                <div className={styles.formGroup}>
+                  <label>
+                    <Lock size={14} />
+                    <span>Current Password</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    placeholder="Enter current password"
+                    required
+                  />
+                </div>
 
-            <div className={styles.formGroup}>
-              <label>
-                <Mail size={14} />
-                <span>Email Address (Read-only)</span>
-              </label>
-              <input
-                type="email"
-                value={user.email}
-                disabled
-                className={styles.disabledInput}
-              />
-            </div>
+                <div className={styles.formGroup}>
+                  <label>
+                    <Lock size={14} />
+                    <span>New Password</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    required
+                  />
+                </div>
 
-            <div className={styles.formGroup}>
-              <label>
-                <Phone size={14} />
-                <span>Contact Phone</span>
-              </label>
-              <input
-                type="tel"
-                value={profilePhone}
-                onChange={(e) => setProfilePhone(e.target.value)}
-                placeholder="Phone number"
-                required
-              />
-            </div>
+                <div className={styles.formGroup}>
+                  <label>
+                    <Lock size={14} />
+                    <span>Confirm New Password</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    required
+                  />
+                </div>
 
-            <button
-              type="submit"
-              disabled={isUpdatingProfile}
-              className={styles.updateBtn}
-            >
-              {isUpdatingProfile ? <Loader2 size={16} className="animate-spin" /> : "Save Changes"}
-            </button>
-          </form>
+                <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPasswordFields(false);
+                      setOldPassword("");
+                      setNewPassword("");
+                      setConfirmPassword("");
+                    }}
+                    className={styles.cancelBtn}
+                    style={{ flex: 1 }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isUpdatingPassword}
+                    className={styles.updateBtn}
+                    style={{ flex: 2, marginTop: 0 }}
+                  >
+                    {isUpdatingPassword ? <Loader2 size={16} className="animate-spin" /> : "Update Password"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
 
         {/* Addresses list & new address forms */}

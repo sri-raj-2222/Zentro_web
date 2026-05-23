@@ -79,6 +79,12 @@
   }
 }
 
+.profileCol {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
 .card {
   background: var(--card);
   border: 1px solid var(--border);
