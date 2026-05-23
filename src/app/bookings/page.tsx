@@ -130,7 +130,7 @@ export default function BookingsPage() {
         </div>
       </div>
 
-      {/* Bookings Grid/List */}
+      {/* Bookings Grid / Empty State */}
       {filteredBookings.length === 0 ? (
         <div className={styles.emptyState}>
           <Inbox size={48} className={styles.emptyIcon} />
@@ -145,10 +145,15 @@ export default function BookingsPage() {
       ) : (
         <div className={styles.grid}>
           {filteredBookings.map((booking) => {
-            const isCompletedCustomer = 
-              user.role === "user" && 
-              booking.status === "completed";
-            
+            const isCompleted = booking.status === "completed";
+
+            // Customer who hasn't rated yet → show Rate button
+            const showRateButton =
+              user.role === "user" && isCompleted && !booking.feedbackSubmitted;
+
+            // All roles: show review panel once feedback is submitted
+            const showReviewPanel = isCompleted && booking.feedbackSubmitted;
+
             return (
               <div key={booking.id} className={styles.cardWrap}>
                 <BookingCard
@@ -158,20 +163,47 @@ export default function BookingsPage() {
                   onUpdateStatus={(status) => updateStatus(booking.id, status)}
                   onCancel={() => cancelBooking(booking.id)}
                 />
-                
-                {isCompletedCustomer && (
+
+                {/* Customer: rate button on unreviewed completed jobs */}
+                {showRateButton && (
                   <div className={styles.cardFeedbackOverlay}>
-                    {booking.feedbackSubmitted ? (
-                      <span className={styles.feedbackChecked}>
-                        ✓ Rating Submitted
-                      </span>
+                    <button
+                      onClick={() => setFeedbackBooking(booking)}
+                      className={styles.rateBtn}
+                    >
+                      Rate Wash &amp; Cleaner
+                    </button>
+                  </div>
+                )}
+
+                {/* Worker / Admin / Customer: submitted rating & review */}
+                {showReviewPanel && (
+                  <div className={styles.workerFeedbackPanel}>
+                    <div className={styles.workerFeedbackHeader}>
+                      <span className={styles.workerFeedbackTitle}>Customer Review</span>
+                      {booking.feedbackRating ? (
+                        <div className={styles.starRow}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <span
+                              key={star}
+                              className={styles.star}
+                              style={{ color: star <= booking.feedbackRating! ? "#f59e0b" : "var(--border)" }}
+                            >
+                              ★
+                            </span>
+                          ))}
+                          <span className={styles.ratingNum}>{booking.feedbackRating}/5</span>
+                        </div>
+                      ) : (
+                        <span className={styles.noReviewBadge}>No rating given</span>
+                      )}
+                    </div>
+                    {booking.feedbackDescription ? (
+                      <p className={styles.reviewText}>&ldquo;{booking.feedbackDescription}&rdquo;</p>
                     ) : (
-                      <button
-                        onClick={() => setFeedbackBooking(booking)}
-                        className={styles.rateBtn}
-                      >
-                        Rate Wash & Cleaner
-                      </button>
+                      <p className={styles.reviewText} style={{ fontStyle: "normal", color: "var(--muted-foreground)" }}>
+                        No written review was left.
+                      </p>
                     )}
                   </div>
                 )}
@@ -209,3 +241,4 @@ export default function BookingsPage() {
     </div>
   );
 }
+

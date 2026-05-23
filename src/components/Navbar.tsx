@@ -38,6 +38,7 @@ export function Navbar() {
       return [
         { label: "Dashboard", href: "/dashboard" },
         { label: "Claimable Jobs", href: "/jobs" },
+        { label: "Attendance", href: "/attendance" },
         { label: "My History", href: "/bookings" },
         { label: "Profile", href: "/profile" },
       ];

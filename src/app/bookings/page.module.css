@@ -258,3 +258,69 @@
   transform: translateY(-2px);
   background: var(--primary-dark);
 }
+
+/* Worker Feedback Panel */
+.workerFeedbackPanel {
+  padding: 14px 20px 16px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(245, 158, 11, 0.02));
+  border-top: 1px solid rgba(245, 158, 11, 0.2);
+  animation: fadeSlideUp 0.3s ease forwards;
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.workerFeedbackHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.workerFeedbackTitle {
+  font-size: 12px;
+  font-weight: 800;
+  color: #f59e0b;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.starRow {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.star {
+  font-size: 16px;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+.ratingNum {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f59e0b;
+  margin-left: 6px;
+}
+
+.noReviewBadge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  background: var(--accent);
+  padding: 3px 8px;
+  border-radius: 8px;
+}
+
+.reviewText {
+  font-size: 13px;
+  color: var(--foreground);
+  font-style: italic;
+  line-height: 1.5;
+  margin: 0;
+  opacity: 0.85;
+}

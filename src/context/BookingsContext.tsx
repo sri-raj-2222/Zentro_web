@@ -32,6 +32,8 @@ export interface Booking {
   scheduledDate?: string;
   feedbackSubmitted?: boolean;
   feedbackId?: string;
+  feedbackRating?: number;
+  feedbackDescription?: string;
 }
 
 export type WorkerStatus = "available" | "busy";
@@ -146,6 +148,7 @@ export function BookingsProvider({ children }: { children: React.ReactNode }) {
   async function loadBookings() {
     setIsLoading(true);
     try {
+      // Step 1: load bookings (without feedback join to avoid PostgREST FK alias issues)
       const { data, error } = await supabase
         .from("bookings")
         .select(`
@@ -158,6 +161,27 @@ export function BookingsProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
 
       if (data) {
+        // Step 2: collect all feedback_ids from completed bookings
+        const feedbackIds = data
+          .map((b: any) => b.feedback_id)
+          .filter(Boolean) as string[];
+
+        // Step 3: fetch feedbacks for those IDs in one query
+        const feedbackMap: Record<string, { rating: number; description?: string }> = {};
+        if (feedbackIds.length > 0) {
+          const { data: feedbacks } = await supabase
+            .from("feedbacks")
+            .select("id, rating, description")
+            .in("id", feedbackIds);
+
+          if (feedbacks) {
+            feedbacks.forEach((f: any) => {
+              feedbackMap[f.id] = { rating: f.rating, description: f.description };
+            });
+          }
+        }
+
+        // Step 4: merge feedback into bookings
         const formatted: Booking[] = data.map((b: any) => ({
           id: b.id,
           userId: b.user_id,
@@ -178,6 +202,8 @@ export function BookingsProvider({ children }: { children: React.ReactNode }) {
           scheduledDate: b.scheduled_date,
           feedbackSubmitted: b.feedback_submitted,
           feedbackId: b.feedback_id,
+          feedbackRating: b.feedback_id ? feedbackMap[b.feedback_id]?.rating : undefined,
+          feedbackDescription: b.feedback_id ? feedbackMap[b.feedback_id]?.description : undefined,
         }));
         setBookings(formatted);
       }
@@ -187,6 +213,7 @@ export function BookingsProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   }
+
 
   async function createBooking(
     data: Omit<
