@@ -222,6 +222,29 @@ create policy "Workers can insert own attendance" on public.attendance_records f
 drop policy if exists "Workers can update own attendance" on public.attendance_records;
 create policy "Workers can update own attendance" on public.attendance_records for update using (auth.uid() = worker_id);
 
+-- Addresses Table
+create table if not exists public.addresses (
+  id text primary key,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  latitude numeric not null,
+  longitude numeric not null,
+  full_address text not null,
+  city text not null,
+  state text not null,
+  country text not null,
+  pincode text not null,
+  is_default boolean not null default false,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Row Level Security (RLS) for Addresses
+alter table public.addresses enable row level security;
+
+drop policy if exists "Users can manage own addresses" on public.addresses;
+create policy "Users can manage own addresses" on public.addresses
+  for all using (auth.uid() = user_id);
+
 -- --------------------------------------------------------
 -- SEED DATA (Services)
 -- --------------------------------------------------------

@@ -38,6 +38,61 @@ export default function HomeScreen() {
   const [pendingFeedback, setPendingFeedback] = useState<Booking | null>(null);
   const [handledFeedbackIds, setHandledFeedbackIds] = useState<Set<string>>(new Set());
 
+  // Reviews state for workers
+  const [workerReviews, setWorkerReviews] = useState<any[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+
+  useEffect(() => {
+    if (!user || user.role !== "worker") return;
+    const workerId = user.id;
+
+    async function loadWorkerReviews() {
+      setIsLoadingReviews(true);
+      try {
+        const { data, error } = await supabase
+          .from("feedbacks")
+          .select(`
+            id,
+            rating,
+            description,
+            created_at,
+            customer:customer_id(name)
+          `)
+          .eq("worker_id", workerId)
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        setWorkerReviews(data || []);
+      } catch (e) {
+        console.error("Error loading worker reviews", e);
+      } finally {
+        setIsLoadingReviews(false);
+      }
+    }
+
+    loadWorkerReviews();
+
+    const channel = supabase
+      .channel(`worker_reviews_${workerId}_${Math.random().toString(36).slice(2, 7)}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "feedbacks",
+          filter: `worker_id=eq.${user.id}`
+        },
+        () => {
+          loadWorkerReviews();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   useEffect(() => {
     if (!user || user.role !== "user") return;
 
@@ -577,6 +632,70 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
             ))
+        )}
+
+        {/* Customer Reviews Section */}
+        <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 24 }]}>
+          💬 Customer Reviews
+        </Text>
+        {isLoadingReviews ? (
+          <View style={[styles.activeBanner, { backgroundColor: colors.card, borderColor: colors.border, padding: 14, justifyContent: "center" }]}>
+            <Text style={{ color: colors.mutedForeground, fontSize: 13 }}>Loading reviews...</Text>
+          </View>
+        ) : workerReviews.length === 0 ? (
+          <View style={[styles.activeBanner, { backgroundColor: colors.card, borderColor: colors.border, padding: 14 }]}>
+            <Text style={{ color: colors.mutedForeground, fontSize: 13 }}>
+              No reviews submitted by customers yet.
+            </Text>
+          </View>
+        ) : (
+          workerReviews.map((r) => (
+            <View
+              key={r.id}
+              style={[
+                styles.recentRow,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  padding: 16,
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  gap: 8,
+                },
+              ]}
+            >
+              <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%" }}>
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>
+                    {r.customer?.name || "Anonymous Customer"}
+                  </Text>
+                  <Text style={{ fontSize: 11, color: colors.mutedForeground, marginTop: 2 }}>
+                    {new Date(r.created_at).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: "row", gap: 2 }}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Feather
+                      key={star}
+                      name="star"
+                      size={12}
+                      color={star <= r.rating ? "#f59e0b" : colors.border}
+                      style={{ marginRight: 1 }}
+                    />
+                  ))}
+                </View>
+              </View>
+              {r.description ? (
+                <Text style={{ fontSize: 13, color: colors.mutedForeground, fontStyle: "italic", lineHeight: 18 }}>
+                  "{r.description}"
+                </Text>
+              ) : null}
+            </View>
+          ))
         )}
 
         <TouchableOpacity

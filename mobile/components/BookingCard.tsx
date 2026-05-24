@@ -134,7 +134,7 @@ export function BookingCard({
 
       {showWorkerActions && booking.status === "accepted" && (
         <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: "#8b5cf6" }]}
+          style={[styles.actionBtn, { backgroundColor: colors.primary }]}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             onUpdateStatus?.("in_progress");

@@ -73,8 +73,41 @@ export default function AdminWorkersPage() {
   const [deleteTarget, setDeleteTarget] = useState<WorkerProfile | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Reviews modal
+  const [selectedWorkerReviews, setSelectedWorkerReviews] = useState<WorkerProfile | null>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+
   // Toast
   const [toast, setToast] = useState<ToastState | null>(null);
+
+  // Fetch worker reviews
+  const fetchWorkerReviews = async (worker: WorkerProfile) => {
+    setSelectedWorkerReviews(worker);
+    setIsLoadingReviews(true);
+    setReviews([]);
+    try {
+      const { data, error } = await supabase
+        .from("feedbacks")
+        .select(`
+          id,
+          rating,
+          description,
+          created_at,
+          customer:customer_id(name)
+        `)
+        .eq("worker_id", worker.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setReviews(data || []);
+    } catch (e: any) {
+      console.error("Error fetching reviews:", e);
+      showToast("Failed to load reviews", "error");
+    } finally {
+      setIsLoadingReviews(false);
+    }
+  };
 
   const showToast = useCallback((message: string, type: "success" | "error") => {
     setToast({ message, type });
@@ -128,7 +161,6 @@ export default function AdminWorkersPage() {
       setAllProfilesDebug(data || []);
     } catch (e: any) {
       console.error("Debug: Error fetching all profiles:", e);
-      alert("Failed to fetch all profiles: " + e.message);
     }
   };
 
@@ -369,10 +401,15 @@ export default function AdminWorkersPage() {
                       : "N/A"}
                   </span>
                 </div>
-                <div className={styles.statPill}>
+                <button
+                  type="button"
+                  onClick={() => fetchWorkerReviews(worker)}
+                  className={styles.statPillClickable}
+                  title="Click to view reviews"
+                >
                   <MessageSquare size={14} />
                   <span>{worker.total_feedbacks || 0} reviews</span>
-                </div>
+                </button>
               </div>
 
               <div className={styles.workerFooter}>
@@ -545,6 +582,97 @@ export default function AdminWorkersPage() {
                     Remove
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reviews List Modal */}
+      {selectedWorkerReviews && (
+        <div className={styles.modalOverlay} onClick={() => setSelectedWorkerReviews(null)}>
+          <div className={styles.modal} style={{ maxWidth: "600px" }} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>{selectedWorkerReviews.name}'s Reviews</h2>
+              <button
+                onClick={() => setSelectedWorkerReviews(null)}
+                className={styles.modalCloseBtn}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ maxHeight: "400px", overflowY: "auto", paddingRight: "8px" }}>
+              {isLoadingReviews ? (
+                <div className={styles.loadingContainer} style={{ minHeight: "200px" }}>
+                  <div className={styles.spinner} style={{ margin: "20px auto" }}></div>
+                  <p style={{ textAlign: "center" }}>Loading reviews...</p>
+                </div>
+              ) : reviews.length === 0 ? (
+                <div className={styles.emptyState} style={{ padding: "40px 20px" }}>
+                  <Star size={32} style={{ color: "var(--border)" }} />
+                  <p>No customer reviews left for this worker yet.</p>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  {reviews.map((review) => (
+                    <div
+                      key={review.id}
+                      style={{
+                        padding: "16px",
+                        background: "var(--accent)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "12px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <div>
+                          <p style={{ fontWeight: "700", fontSize: "14px", margin: 0, color: "var(--foreground)" }}>
+                            {Array.isArray(review.customer)
+                              ? review.customer[0]?.name || "Anonymous Customer"
+                              : review.customer?.name || "Anonymous Customer"}
+                          </p>
+                          <p style={{ fontSize: "11px", color: "var(--muted-foreground)", margin: "4px 0 0 0" }}>
+                            {new Date(review.created_at).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </p>
+                        </div>
+                        <div style={{ display: "flex", gap: "2px" }}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={14}
+                              fill={star <= review.rating ? "#eab308" : "none"}
+                              color={star <= review.rating ? "#eab308" : "var(--border)"}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      {review.description && (
+                        <p style={{ fontSize: "13px", color: "var(--foreground)", margin: 0, fontStyle: "italic", lineHeight: "1.4" }}>
+                          &ldquo;{review.description}&rdquo;
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className={styles.formActions} style={{ marginTop: "24px" }}>
+              <button
+                type="button"
+                onClick={() => setSelectedWorkerReviews(null)}
+                className={styles.cancelModalBtn}
+                style={{ width: "100%" }}
+              >
+                Close
               </button>
             </div>
           </div>

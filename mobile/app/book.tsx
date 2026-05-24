@@ -277,15 +277,10 @@ export default function BookScreen() {
       setLoading(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-      const isToday =
-        scheduledDate.getDate() === new Date().getDate() &&
-        scheduledDate.getMonth() === new Date().getMonth() &&
-        scheduledDate.getFullYear() === new Date().getFullYear();
-
-      if (!isAvailable && isToday) {
+      if (!isAvailable) {
         Alert.alert(
           "Workers Busy",
-          "All our workers are currently busy. Our team will approach you within 1 hour.",
+          "the workers are busy our team will contact you in one hour",
           [{ text: "OK", onPress: () => router.replace("/(tabs)/bookings") }]
         );
       } else {

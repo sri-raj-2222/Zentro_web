@@ -144,7 +144,7 @@ export function BookingCard({
       {showWorkerActions && booking.status === "accepted" && (
         <button
           className={styles.actionBtn}
-          style={{ backgroundColor: "#8b5cf6" }}
+          style={{ backgroundColor: "var(--primary)" }}
           onClick={() => onUpdateStatus?.("in_progress")}
         >
           <PlayCircle size={16} />

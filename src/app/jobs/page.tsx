@@ -54,7 +54,6 @@ export default function JobsPage() {
       if (!confirmBusy) return;
     }
     await acceptBooking(bookingId, user.id, user.name);
-    alert("Job claimed successfully! Check your dashboard for job details.");
     router.push("/dashboard");
   };
 

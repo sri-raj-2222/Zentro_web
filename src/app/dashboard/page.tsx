@@ -25,6 +25,7 @@ import {
   Compass
 } from "lucide-react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 import styles from "./page.module.css";
 
 export default function DashboardPage() {
@@ -45,6 +46,17 @@ export default function DashboardPage() {
 
   const [activeFeedbackBooking, setActiveFeedbackBooking] = useState<Booking | null>(null);
   const [selectedWorkerForOverride, setSelectedWorkerForOverride] = useState<Record<string, string>>({});
+  
+  // Reviews state for workers
+  interface WorkerFeedback {
+    id: string;
+    rating: number;
+    description: string;
+    created_at: string;
+    customer?: any;
+  }
+  const [workerReviews, setWorkerReviews] = useState<WorkerFeedback[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
   
   // Date utils
   const now = new Date();
@@ -72,6 +84,37 @@ export default function DashboardPage() {
       }
     }
   }, [bookings, user, bookingsLoading]);
+
+  // Load reviews if the user is a worker
+  useEffect(() => {
+    if (user && user.role === "worker") {
+      const loadWorkerReviews = async () => {
+        setIsLoadingReviews(true);
+        try {
+          const { data, error } = await supabase
+            .from("feedbacks")
+            .select(`
+              id,
+              rating,
+              description,
+              created_at,
+              booking_id,
+              customer:customer_id(name)
+            `)
+            .eq("worker_id", user.id)
+            .order("created_at", { ascending: false });
+
+          if (error) throw error;
+          setWorkerReviews(data || []);
+        } catch (e) {
+          console.error("Error loading worker reviews:", e);
+        } finally {
+          setIsLoadingReviews(false);
+        }
+      };
+      loadWorkerReviews();
+    }
+  }, [user]);
 
   if (authLoading || bookingsLoading || !user) {
     return (
@@ -321,31 +364,90 @@ export default function DashboardPage() {
         </div>
 
         <div className={styles.dashboardGrid}>
-          {/* Active Job Tasks */}
-          <div className={styles.cardContainer}>
-            <div className={styles.cardHeader}>
-              <h2>My Active Jobs</h2>
-              {activeJobs.length > 0 && <span className={styles.badge}>{activeJobs.length}</span>}
+          {/* Main Column */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            {/* Active Job Tasks */}
+            <div className={styles.cardContainer}>
+              <div className={styles.cardHeader}>
+                <h2>My Active Jobs</h2>
+                {activeJobs.length > 0 && <span className={styles.badge}>{activeJobs.length}</span>}
+              </div>
+
+              {activeJobs.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <AlertCircle size={32} />
+                  <p>No active wash assigned. Claim jobs from the board.</p>
+                  <Link href="/jobs" className={styles.emptyLink}>Browse Claimable Jobs</Link>
+                </div>
+              ) : (
+                <div className={styles.bookingsList}>
+                  {activeJobs.map((booking) => (
+                    <BookingCard
+                      key={booking.id}
+                      booking={booking}
+                      showWorkerActions={true}
+                      onUpdateStatus={(status) => updateStatus(booking.id, status)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
-            {activeJobs.length === 0 ? (
-              <div className={styles.emptyState}>
-                <AlertCircle size={32} />
-                <p>No active wash assigned. Claim jobs from the board.</p>
-                <Link href="/jobs" className={styles.emptyLink}>Browse Claimable Jobs</Link>
+            {/* Customer Reviews */}
+            <div className={styles.cardContainer}>
+              <div className={styles.cardHeader}>
+                <h2>My Customer Reviews</h2>
+                {workerReviews.length > 0 && <span className={styles.badge}>{workerReviews.length}</span>}
               </div>
-            ) : (
-              <div className={styles.bookingsList}>
-                {activeJobs.map((booking) => (
-                  <BookingCard
-                    key={booking.id}
-                    booking={booking}
-                    showWorkerActions={true}
-                    onUpdateStatus={(status) => updateStatus(booking.id, status)}
-                  />
-                ))}
-              </div>
-            )}
+
+              {isLoadingReviews ? (
+                <div className={styles.loadingContainer} style={{ minHeight: "150px" }}>
+                  <div className={styles.spinner} style={{ margin: "20px auto" }}></div>
+                  <p style={{ textAlign: "center" }}>Loading reviews...</p>
+                </div>
+              ) : workerReviews.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <Star size={32} style={{ color: "var(--border)" }} />
+                  <p>No customer reviews yet.</p>
+                </div>
+              ) : (
+                <div className={styles.reviewsList}>
+                  {workerReviews.map((review) => (
+                    <div key={review.id} className={styles.reviewCard}>
+                      <div className={styles.reviewHeader}>
+                        <div className={styles.reviewUser}>
+                          <p className={styles.reviewUserName}>
+                            {Array.isArray(review.customer)
+                              ? review.customer[0]?.name || "Anonymous Customer"
+                              : review.customer?.name || "Anonymous Customer"}
+                          </p>
+                          <p className={styles.reviewDate}>
+                            {new Date(review.created_at).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric"
+                            })}
+                          </p>
+                        </div>
+                        <div className={styles.reviewStars}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={14}
+                              fill={star <= review.rating ? "#eab308" : "none"}
+                              color={star <= review.rating ? "#eab308" : "var(--border)"}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      {review.description && (
+                        <p className={styles.reviewComment}>&ldquo;{review.description}&rdquo;</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Jobs Board Summary & Attendance Checklist */}
@@ -399,7 +501,6 @@ export default function DashboardPage() {
       if (!selectedWorkerId) return;
       const workerName = workerStatuses[selectedWorkerId]?.name || "Worker";
       await acceptBooking(bookingId, selectedWorkerId, workerName);
-      alert("Worker assigned successfully!");
     };
 
     return (

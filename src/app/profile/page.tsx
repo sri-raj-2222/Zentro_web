@@ -16,7 +16,8 @@ import {
   Check, 
   ArrowLeft,
   Loader2,
-  Lock
+  Lock,
+  X
 } from "lucide-react";
 import Link from "next/link";
 import styles from "./page.module.css";
@@ -39,11 +40,12 @@ export default function ProfilePage() {
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
   // Password edit fields
-  const [showPasswordFields, setShowPasswordFields] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [pwdError, setPwdError] = useState("");
 
   // Address creation form fields
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -55,6 +57,25 @@ export default function ProfilePage() {
   const [newLng, setNewLng] = useState(77.5946);
   const [isLocating, setIsLocating] = useState(false);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
+
+  // Feedback messages
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+
+  const showFeedback = (msg: string, isError = false) => {
+    if (isError) {
+      setErrorMsg(msg);
+      setSuccessMsg("");
+    } else {
+      setSuccessMsg(msg);
+      setErrorMsg("");
+    }
+    // Auto-clear after 4 seconds
+    setTimeout(() => {
+      setErrorMsg("");
+      setSuccessMsg("");
+    }, 4000);
+  };
 
   // Redirect if not logged in
   useEffect(() => {
@@ -83,56 +104,59 @@ export default function ProfilePage() {
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profileName.trim() || !profilePhone.trim()) {
-      alert("Name and Phone number are required fields.");
+      showFeedback("Name and Phone number are required fields.", true);
       return;
     }
     setIsUpdatingProfile(true);
     try {
       const res = await updateProfile(profileName.trim(), profilePhone.trim());
       if (res.success) {
-        alert("Profile details updated successfully!");
+        showFeedback("Profile details updated successfully!");
       } else {
-        alert("Failed to update profile: " + res.error);
+        showFeedback("Failed to update profile: " + res.error, true);
       }
     } catch (err: any) {
-      alert(err.message);
+      showFeedback(err.message, true);
     } finally {
       setIsUpdatingProfile(false);
     }
   };
 
-  const handleChangePassword = async (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    setPwdError("");
+
     if (!oldPassword.trim()) {
-      alert("Current password is required.");
+      setPwdError("Current password is required.");
       return;
     }
     if (!newPassword.trim()) {
-      alert("New password cannot be empty.");
+      setPwdError("New password cannot be empty.");
       return;
     }
     if (newPassword.length < 6) {
-      alert("New password must be at least 6 characters long.");
+      setPwdError("New password must be at least 6 characters long.");
       return;
     }
     if (newPassword !== confirmPassword) {
-      alert("New passwords do not match.");
+      setPwdError("New passwords do not match.");
       return;
     }
+
     setIsUpdatingPassword(true);
     try {
-      const res = await updatePassword(newPassword.trim(), oldPassword.trim());
-      if (res.success) {
-        alert("Password updated successfully!");
+      const pwdRes = await updatePassword(newPassword.trim(), oldPassword.trim());
+      if (pwdRes.success) {
+        showFeedback("Password updated successfully!");
         setOldPassword("");
         setNewPassword("");
         setConfirmPassword("");
-        setShowPasswordFields(false);
+        setShowPasswordModal(false);
       } else {
-        alert("Failed to update password: " + res.error);
+        setPwdError("Failed to update password: " + pwdRes.error);
       }
     } catch (err: any) {
-      alert(err.message);
+      setPwdError(err.message || "An unexpected error occurred.");
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -150,7 +174,7 @@ export default function ProfilePage() {
         setNewLat(res.coords.latitude);
         setNewLng(res.coords.longitude);
       } else {
-        alert("Failed to acquire location: " + (res.error || "Please allow GPS browser access."));
+        showFeedback("Failed to acquire location: " + (res.error || "Please allow GPS browser access."), true);
       }
     } catch (e) {
       console.error(e);
@@ -162,7 +186,7 @@ export default function ProfilePage() {
   const handleCreateAddress = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFullAddress || !newCity || !newState || !newPincode) {
-      alert("Please fill out all address details.");
+      showFeedback("Please fill out all address details.", true);
       return;
     }
     setIsAddingAddress(true);
@@ -184,12 +208,12 @@ export default function ProfilePage() {
         setNewCity("");
         setNewState("");
         setNewPincode("");
-        alert("New address inserted successfully!");
+        showFeedback("New address inserted successfully!");
       } else {
-        alert("Failed to save address: " + res.error);
+        showFeedback("Failed to save address: " + res.error, true);
       }
     } catch (err: any) {
-      alert(err.message);
+      showFeedback(err.message, true);
     } finally {
       setIsAddingAddress(false);
     }
@@ -199,7 +223,7 @@ export default function ProfilePage() {
     if (confirm("Are you sure you want to delete this address?")) {
       const res = await deleteAddress(id);
       if (!res.success) {
-        alert("Error deleting address: " + res.error);
+        showFeedback("Error deleting address: " + res.error, true);
       }
     }
   };
@@ -207,7 +231,7 @@ export default function ProfilePage() {
   const handleSetDefault = async (id: string) => {
     const res = await setAddressDefault(id);
     if (!res.success) {
-      alert("Error setting default address: " + res.error);
+      showFeedback("Error setting default address: " + res.error, true);
     }
   };
 
@@ -225,6 +249,37 @@ export default function ProfilePage() {
             : "Configure your user details, default geolocations, and service profiles."}
         </p>
       </div>
+
+      {errorMsg && (
+        <div style={{
+          padding: "12px 16px",
+          background: "rgba(239, 68, 68, 0.1)",
+          border: "1px solid rgba(239, 68, 68, 0.2)",
+          borderRadius: "6px",
+          color: "#ef4444",
+          fontWeight: "750",
+          fontSize: "14px",
+          marginBottom: "24px",
+          textAlign: "center"
+        }}>
+          {errorMsg}
+        </div>
+      )}
+      {successMsg && (
+        <div style={{
+          padding: "12px 16px",
+          background: "rgba(34, 197, 94, 0.1)",
+          border: "1px solid rgba(34, 197, 94, 0.2)",
+          borderRadius: "6px",
+          color: "#22c55e",
+          fontWeight: "750",
+          fontSize: "14px",
+          marginBottom: "24px",
+          textAlign: "center"
+        }}>
+          {successMsg}
+        </div>
+      )}
 
       <div 
         className={styles.grid} 
@@ -297,6 +352,20 @@ export default function ProfilePage() {
               </div>
 
               <button
+                type="button"
+                onClick={() => {
+                  setOldPassword("");
+                  setNewPassword("");
+                  setConfirmPassword("");
+                  setPwdError("");
+                  setShowPasswordModal(true);
+                }}
+                className={styles.changePasswordLink}
+              >
+                Change Password
+              </button>
+
+              <button
                 type="submit"
                 disabled={isUpdatingProfile}
                 className={styles.updateBtn}
@@ -305,242 +374,282 @@ export default function ProfilePage() {
               </button>
             </form>
           </div>
-
-          {/* Change Password Card */}
-          <div className={styles.card}>
-            <div className={styles.cardHeader}>
-              <h3 style={{ margin: 0 }}>Change Password</h3>
-            </div>
-            {!showPasswordFields ? (
-              <button
-                type="button"
-                onClick={() => setShowPasswordFields(true)}
-                className={styles.updateBtn}
-                style={{ width: "100%" }}
-              >
-                <Lock size={16} />
-                <span>Modify Password</span>
-              </button>
-            ) : (
-              <form onSubmit={handleChangePassword} className={styles.form}>
-                <div className={styles.formGroup}>
-                  <label>
-                    <Lock size={14} />
-                    <span>Current Password</span>
-                  </label>
-                  <input
-                    type="password"
-                    value={oldPassword}
-                    onChange={(e) => setOldPassword(e.target.value)}
-                    placeholder="Enter current password"
-                    required
-                  />
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label>
-                    <Lock size={14} />
-                    <span>New Password</span>
-                  </label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new password"
-                    required
-                  />
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label>
-                    <Lock size={14} />
-                    <span>Confirm New Password</span>
-                  </label>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                    required
-                  />
-                </div>
-
-                <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowPasswordFields(false);
-                      setOldPassword("");
-                      setNewPassword("");
-                      setConfirmPassword("");
-                    }}
-                    className={styles.cancelBtn}
-                    style={{ flex: 1 }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isUpdatingPassword}
-                    className={styles.updateBtn}
-                    style={{ flex: 2, marginTop: 0 }}
-                  >
-                    {isUpdatingPassword ? <Loader2 size={16} className="animate-spin" /> : "Update Password"}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
         </div>
 
         {/* Addresses list & new address forms */}
         {user.role !== "admin" && user.role !== "worker" && (
-          <div className={styles.card}>
-            <div className={styles.cardHeader}>
-              <h3>Saved Addresses</h3>
-              <button
-                onClick={() => setShowAddressForm(!showAddressForm)}
-                className={styles.addBtn}
-              >
-                <Plus size={16} />
-                <span>New Location</span>
-              </button>
-            </div>
-
-            {showAddressForm && (
-              <form onSubmit={handleCreateAddress} className={styles.addressForm}>
-                <h4>Configure Service Location</h4>
-                
+          <div className={styles.addressCol}>
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <h3>Saved Addresses</h3>
                 <button
-                  type="button"
-                  onClick={handleLocateMe}
-                  disabled={isLocating}
-                  className={styles.locateBtn}
+                  onClick={() => setShowAddressForm(!showAddressForm)}
+                  className={styles.addBtn}
                 >
-                  <Compass size={16} className={isLocating ? "animate-spin" : ""} />
-                  <span>{isLocating ? "Locating..." : "Use Current GPS Coordinates"}</span>
+                  <Plus size={16} />
+                  <span>New Location</span>
                 </button>
+              </div>
 
-                <div className={styles.formGroup}>
-                  <label>Address / Landmark</label>
-                  <input
-                    type="text"
-                    value={newFullAddress}
-                    onChange={(e) => setNewFullAddress(e.target.value)}
-                    placeholder="Flat/House no, Area, LandMark"
-                    required
-                  />
-                </div>
-
-                <div className={styles.formRow}>
-                  <div className={styles.formGroup}>
-                    <label>City</label>
-                    <input
-                      type="text"
-                      value={newCity}
-                      onChange={(e) => setNewCity(e.target.value)}
-                      placeholder="City"
-                      required
-                    />
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>State</label>
-                    <input
-                      type="text"
-                      value={newState}
-                      onChange={(e) => setNewState(e.target.value)}
-                      placeholder="State"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className={styles.formRow}>
-                  <div className={styles.formGroup}>
-                    <label>Pincode</label>
-                    <input
-                      type="text"
-                      value={newPincode}
-                      onChange={(e) => setNewPincode(e.target.value)}
-                      placeholder="Pincode"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className={styles.formButtonRow}>
+              {showAddressForm && (
+                <form onSubmit={handleCreateAddress} className={styles.addressForm}>
+                  <h4>Configure Service Location</h4>
+                  
                   <button
                     type="button"
-                    onClick={() => setShowAddressForm(false)}
-                    className={styles.cancelBtn}
+                    onClick={handleLocateMe}
+                    disabled={isLocating}
+                    className={styles.locateBtn}
                   >
-                    Cancel
+                    <Compass size={16} className={isLocating ? "animate-spin" : ""} />
+                    <span>{isLocating ? "Locating..." : "Use Current GPS Coordinates"}</span>
                   </button>
-                  <button
-                    type="submit"
-                    disabled={isAddingAddress}
-                    className={styles.saveBtn}
-                  >
-                    {isAddingAddress ? "Saving..." : "Save Address"}
-                  </button>
-                </div>
-              </form>
-            )}
 
-            {addressLoading ? (
-              <p className={styles.loadingText}>Syncing addresses...</p>
-            ) : addresses.length === 0 ? (
-              <div className={styles.emptyState}>
-                <MapPin size={32} />
-                <p>No locations saved. Add your coordinates above.</p>
-              </div>
-            ) : (
-              <div className={styles.addressList}>
-                {addresses.map((addr) => (
-                  <div key={addr.id} className={`${styles.addressItem} ${addr.isDefault ? styles.defaultItem : ""}`}>
-                    <div className={styles.addressIconWrap}>
-                      <MapPin size={18} />
-                    </div>
-                    
-                    <div className={styles.addressDetails}>
-                      <p className={styles.fullAddress}>{addr.fullAddress}</p>
-                      <p className={styles.subAddress}>
-                        {addr.city}, {addr.state} - {addr.pincode}
-                      </p>
-                      <p className={styles.coords}>
-                        Coords: {addr.latitude.toFixed(4)}, {addr.longitude.toFixed(4)}
-                      </p>
-                    </div>
+                  <div className={styles.formGroup}>
+                    <label>Address / Landmark</label>
+                    <input
+                      type="text"
+                      value={newFullAddress}
+                      onChange={(e) => setNewFullAddress(e.target.value)}
+                      placeholder="Flat/House no, Area, LandMark"
+                      required
+                    />
+                  </div>
 
-                    <div className={styles.addressActions}>
-                      {addr.isDefault ? (
-                        <span className={styles.defaultBadge}>
-                          <Check size={12} />
-                          <span>Default</span>
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => handleSetDefault(addr.id)}
-                          className={styles.defaultBtn}
-                        >
-                          Set Default
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleDeleteAddress(addr.id)}
-                        className={styles.deleteBtn}
-                        title="Delete address"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                  <div className={styles.formRow}>
+                    <div className={styles.formGroup}>
+                      <label>City</label>
+                      <input
+                        type="text"
+                        value={newCity}
+                        onChange={(e) => setNewCity(e.target.value)}
+                        placeholder="City"
+                        required
+                      />
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label>State</label>
+                      <input
+                        type="text"
+                        value={newState}
+                        onChange={(e) => setNewState(e.target.value)}
+                        placeholder="State"
+                        required
+                      />
                     </div>
                   </div>
-                ))}
+
+                  <div className={styles.formRow}>
+                    <div className={styles.formGroup}>
+                      <label>Pincode</label>
+                      <input
+                        type="text"
+                        value={newPincode}
+                        onChange={(e) => setNewPincode(e.target.value)}
+                        placeholder="Pincode"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className={styles.formButtonRow}>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddressForm(false)}
+                      className={styles.cancelBtn}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isAddingAddress}
+                      className={styles.saveBtn}
+                    >
+                      {isAddingAddress ? "Saving..." : "Save Address"}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {addressLoading ? (
+                <p className={styles.loadingText}>Syncing addresses...</p>
+              ) : addresses.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <MapPin size={32} />
+                  <p>No locations saved. Add your coordinates above.</p>
+                </div>
+              ) : (
+                <div className={styles.addressList}>
+                  {addresses.map((addr) => (
+                    <div key={addr.id} className={`${styles.addressItem} ${addr.isDefault ? styles.defaultItem : ""}`}>
+                      <div className={styles.addressIconWrap}>
+                        <MapPin size={18} />
+                      </div>
+                      
+                      <div className={styles.addressDetails}>
+                        <p className={styles.fullAddress}>{addr.fullAddress}</p>
+                        <p className={styles.subAddress}>
+                          {addr.city}, {addr.state} - {addr.pincode}
+                        </p>
+                        <p className={styles.coords}>
+                          Coords: {addr.latitude.toFixed(4)}, {addr.longitude.toFixed(4)}
+                        </p>
+                      </div>
+
+                      <div className={styles.addressActions}>
+                        {addr.isDefault ? (
+                          <span className={styles.defaultBadge}>
+                            <Check size={12} />
+                            <span>Default</span>
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleSetDefault(addr.id)}
+                            className={styles.defaultBtn}
+                          >
+                            Set Default
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteAddress(addr.id)}
+                          className={styles.deleteBtn}
+                          title="Delete address"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className={styles.contactCard}>
+              <h3 className={styles.contactTitle}>Contact Us</h3>
+              <div className={styles.contactInfo}>
+                <div className={styles.contactItem}>
+                  <Mail size={16} className={styles.contactIcon} />
+                  <span>Email:</span>
+                  <a href="mailto:Zentroofficial@gmail.com" className={styles.contactLink}>
+                    Zentroofficial@gmail.com
+                  </a>
+                </div>
+                <div className={styles.contactItem}>
+                  <Phone size={16} className={styles.contactIcon} />
+                  <span>Mobile:</span>
+                  <a href="tel:+916281892357" className={styles.contactLink}>
+                    +91 6281892357
+                  </a>
+                </div>
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>
+
+      {/* Change Password Modal Overlay */}
+      {showPasswordModal && (
+        <div 
+          className={styles.modalOverlay} 
+          onClick={() => !isUpdatingPassword && setShowPasswordModal(false)}
+        >
+          <div 
+            className={styles.modal} 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Change Password</h2>
+              <button 
+                type="button" 
+                onClick={() => !isUpdatingPassword && setShowPasswordModal(false)}
+                className={styles.modalCloseBtn}
+                disabled={isUpdatingPassword}
+                title="Close modal"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {pwdError && (
+              <div className={styles.modalErrorMsg}>
+                {pwdError}
+              </div>
+            )}
+
+            <form onSubmit={handleUpdatePassword} className={styles.modalForm}>
+              <div className={styles.modalFormGroup}>
+                <label className={styles.modalFormLabel}>
+                  <Lock size={14} />
+                  <span>Current Password</span>
+                </label>
+                <input
+                  type="password"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  placeholder="Enter current password"
+                  required
+                  className={styles.modalFormInput}
+                  disabled={isUpdatingPassword}
+                />
+              </div>
+
+              <div className={styles.modalFormGroup}>
+                <label className={styles.modalFormLabel}>
+                  <Lock size={14} />
+                  <span>New Password</span>
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password (min 6 chars)"
+                  required
+                  className={styles.modalFormInput}
+                  disabled={isUpdatingPassword}
+                />
+              </div>
+
+              <div className={styles.modalFormGroup}>
+                <label className={styles.modalFormLabel}>
+                  <Lock size={14} />
+                  <span>Confirm New Password</span>
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  required
+                  className={styles.modalFormInput}
+                  disabled={isUpdatingPassword}
+                />
+              </div>
+
+              <div className={styles.modalFormActions}>
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordModal(false)}
+                  className={styles.cancelModalBtn}
+                  disabled={isUpdatingPassword}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={styles.submitModalBtn}
+                  disabled={isUpdatingPassword}
+                >
+                  {isUpdatingPassword ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    "Update Password"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

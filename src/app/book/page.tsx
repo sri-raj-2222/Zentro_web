@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase";
 import { useBookings } from "@/context/BookingsContext";
 import { useServicePrices, ServiceSubType } from "@/context/ServicePricesContext";
 import { useAddress, Address } from "@/context/AddressContext";
@@ -55,6 +56,7 @@ export default function BookServicePage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationError, setValidationError] = useState("");
 
   // Redirect if not logged in or if worker/admin
   useEffect(() => {
@@ -138,6 +140,7 @@ export default function BookServicePage() {
   // Handle location fetching
   const handleFetchCurrentLocation = async () => {
     setIsLocating(true);
+    setValidationError("");
     try {
       const res = await fetchCurrentLocation();
       if (res.success && res.coords) {
@@ -148,7 +151,7 @@ export default function BookServicePage() {
         setNewLat(res.coords.latitude);
         setNewLng(res.coords.longitude);
       } else {
-        alert("Geolocation Error: " + (res.error || "Could not retrieve coordinates."));
+        setValidationError("Geolocation Error: " + (res.error || "Could not retrieve coordinates."));
       }
     } catch (e: any) {
       console.error(e);
@@ -159,8 +162,9 @@ export default function BookServicePage() {
 
   const handleAddNewAddress = async (e: React.FormEvent) => {
     e.preventDefault();
+    setValidationError("");
     if (!newFullAddress || !newCity || !newState || !newPincode) {
-      alert("Please fill in all address parameters.");
+      setValidationError("Please fill in all address parameters.");
       return;
     }
     setAddressLoading(true);
@@ -184,10 +188,10 @@ export default function BookServicePage() {
         setNewState("");
         setNewPincode("");
       } else {
-        alert("Failed to insert address: " + res.error);
+        setValidationError("Failed to insert address: " + res.error);
       }
     } catch (err: any) {
-      alert(err.message);
+      setValidationError(err.message);
     } finally {
       setAddressLoading(false);
     }
@@ -195,17 +199,27 @@ export default function BookServicePage() {
 
   // Submit final booking payload
   const handleConfirmBooking = async () => {
+    setValidationError("");
     if (!selectedAddress) {
-      alert("Please configure a washing destination address first.");
+      setValidationError("Please configure a washing destination address first.");
       return;
     }
     if (!selectedDate) {
-      alert("Please pick a scheduled service date.");
+      setValidationError("Please pick a scheduled service date.");
       return;
     }
 
     setIsSubmitting(true);
     try {
+      // Check if all workers are busy
+      const { data: availableWorkers } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("role", "worker")
+        .eq("availability_status", "available");
+
+      const allBusy = !availableWorkers || availableWorkers.length === 0;
+
       const label = selectedService === "water_tank" 
         ? `${getServiceLabel(selectedService)} (${tankCapacity}L)`
         : `${getServiceLabel(selectedService)} (${selectedSubType?.typeName || "Standard"})`;
@@ -223,10 +237,12 @@ export default function BookServicePage() {
         scheduledDate: selectedDate.toISOString(),
       });
 
-      alert("Wash Booking created successfully! A worker will claim your request shortly.");
+      if (allBusy) {
+        alert("the workers are busy our team will contact you in one hour");
+      }
       router.push("/dashboard");
     } catch (err: any) {
-      alert("Booking Failed: " + (err.message || "Something went wrong."));
+      setValidationError("Booking Failed: " + (err.message || "Something went wrong."));
     } finally {
       setIsSubmitting(false);
     }
@@ -264,6 +280,21 @@ export default function BookServicePage() {
       </div>
 
       <div className={styles.wizardContent}>
+        {validationError && (
+          <div style={{
+            padding: "12px 16px",
+            background: "rgba(239, 68, 68, 0.1)",
+            border: "1px solid rgba(239, 68, 68, 0.2)",
+            borderRadius: "6px",
+            color: "#ef4444",
+            fontWeight: "750",
+            fontSize: "14px",
+            marginBottom: "24px",
+            textAlign: "center"
+          }}>
+            {validationError}
+          </div>
+        )}
         {/* STEP 1: CONFIGURE SERVICE */}
         {step === 1 && (
           <div className={styles.stepWrapper}>

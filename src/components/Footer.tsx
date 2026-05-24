@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { usePathname } from "next/navigation";
 import styles from "./Footer.module.css";
 
 const FOOTER_LINKS = [
@@ -10,12 +11,16 @@ const FOOTER_LINKS = [
 ];
 
 export function Footer() {
+  const pathname = usePathname();
+  const showCredits = pathname === "/" || pathname === "/login";
+
+  if (!showCredits) {
+    return null;
+  }
+
   return (
     <footer className={styles.footer}>
       <div className={styles.container}>
-        <div className={styles.brand}>
-          © {new Date().getFullYear()} ZENTRO. All rights reserved.
-        </div>
         <div className={styles.credits}>
           Made with <span className={styles.heart}>❤️</span> by{" "}
           {FOOTER_LINKS.map((link, index) => (

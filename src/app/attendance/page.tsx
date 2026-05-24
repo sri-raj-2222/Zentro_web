@@ -131,15 +131,14 @@ export default function AttendancePage() {
   const handleUpdateCommission = async () => {
     const pct = parseInt(commissionInput, 10);
     if (isNaN(pct) || pct < 1 || pct > 100) {
-      alert("Please enter a valid percentage between 1 and 100.");
+      console.error("Please enter a valid percentage between 1 and 100.");
       return;
     }
     setIsUpdatingCommission(true);
     try {
       await updateCommission(selectedWorkerId, pct);
-      alert(`Successfully set worker commission to ${pct}%!`);
     } catch (e: any) {
-      alert(e.message || "Failed to update commission rate.");
+      console.error(e.message || "Failed to update commission rate.");
     } finally {
       setIsUpdatingCommission(false);
     }
@@ -159,7 +158,7 @@ export default function AttendancePage() {
       }
       setActiveDayModal(null);
     } catch (e: any) {
-      alert(e.message || "Failed to update attendance.");
+      console.error(e.message || "Failed to update attendance.");
     }
   };
 

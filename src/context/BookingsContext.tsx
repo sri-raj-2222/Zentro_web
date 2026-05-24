@@ -337,8 +337,6 @@ export function BookingsProvider({ children }: { children: React.ReactNode }) {
       );
     } catch (e: any) {
       console.error("Critical error in updateStatus:", e);
-      const errorMsg = e.message || "Database connection error";
-      alert(`Update Failed\nError: ${errorMsg}\n\nPlease ensure database tables match schema.`);
     }
   }
 
@@ -452,10 +450,8 @@ export function BookingsProvider({ children }: { children: React.ReactNode }) {
         .update({ feedback_submitted: true })
         .eq("id", data.bookingId);
 
-      alert("Thank you for your feedback!");
     } catch (e: any) {
       console.error("Error submitting feedback:", e);
-      alert("Feedback Failed: " + (e.message || "Could not submit feedback."));
     }
   }
   

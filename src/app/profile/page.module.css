@@ -194,6 +194,26 @@
   cursor: not-allowed;
 }
 
+.changePasswordLink {
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 13px;
+  align-self: flex-end;
+  transition: opacity 0.2s ease;
+  margin-top: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  outline: none;
+  text-align: right;
+}
+
+.changePasswordLink:hover {
+  opacity: 0.8;
+}
+
 .updateBtn {
   background: var(--primary);
   color: white;
@@ -461,4 +481,241 @@
 .deleteBtn:hover {
   color: #ef4444;
   background: rgba(239, 68, 68, 0.08);
+}
+
+/* Modal Overlay */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 36px;
+  width: 100%;
+  max-width: 480px;
+  animation: slideUp 0.3s ease;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.modalTitle {
+  font-size: 22px;
+  font-weight: 850;
+  color: var(--foreground);
+  letter-spacing: -0.5px;
+}
+
+.modalCloseBtn {
+  background: var(--accent);
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.modalCloseBtn:hover:not(:disabled) {
+  background: var(--border);
+  color: var(--foreground);
+}
+
+.modalErrorMsg {
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 6px;
+  color: #ef4444;
+  font-weight: 750;
+  font-size: 14px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.modalFormGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modalFormLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+}
+
+.modalFormInput {
+  background: var(--accent);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 650;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modalFormInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08);
+}
+
+.modalFormActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.submitModalBtn {
+  flex: 1;
+  background: var(--primary);
+  color: white;
+  border: none;
+  font-weight: 850;
+  padding: 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.submitModalBtn:hover:not(:disabled) {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+}
+
+.submitModalBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancelModalBtn {
+  background: var(--accent);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  padding: 14px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelModalBtn:hover:not(:disabled) {
+  background: var(--border);
+}
+
+.cancelModalBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.addressCol {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.contactCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  padding: 32px;
+  box-shadow: var(--shadow-md);
+}
+
+.contactTitle {
+  font-size: 18px;
+  font-weight: 850;
+  color: var(--foreground);
+  margin-bottom: 20px;
+}
+
+.contactInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.contactItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--muted-foreground);
+}
+
+.contactIcon {
+  color: var(--primary);
+}
+
+.contactLink {
+  color: var(--foreground);
+  text-decoration: none;
+  font-weight: 700;
+  transition: color 0.2s ease;
+}
+
+.contactLink:hover {
+  color: var(--primary);
+  text-decoration: underline;
 }

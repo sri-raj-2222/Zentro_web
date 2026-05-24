@@ -82,14 +82,12 @@ export default function PricingManagerPage() {
     const price = baselinePrices[id];
     if (price === undefined || price < 0) return;
     await updatePrice(id, price);
-    alert("Baseline price updated!");
   };
 
   const handleUpdateSubTypePrice = async (id: string) => {
     const price = subTypePrices[id];
     if (price === undefined || price < 0) return;
     await updateSubTypePrice(id, price);
-    alert("Service sub-type rate updated!");
   };
 
   const handleToggleSubType = async (id: string, currentStatus: boolean) => {
@@ -99,7 +97,7 @@ export default function PricingManagerPage() {
   const handleAddNewSubType = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTypeName.trim() || newPrice < 0) {
-      alert("Please fill in valid name and rate fields.");
+      console.error("Please fill in valid name and rate fields.");
       return;
     }
 
@@ -109,9 +107,8 @@ export default function PricingManagerPage() {
       setNewTypeName("");
       setNewPrice(0);
       setShowAddForm(false);
-      alert("New subtype configured successfully!");
     } catch (err: any) {
-      alert(err.message);
+      console.error(err.message);
     } finally {
       setIsAdding(false);
     }
