@@ -57,6 +57,7 @@ export default function BookServicePage() {
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState("");
+  const [hasWaterElectricity, setHasWaterElectricity] = useState(false);
 
   // Redirect if not logged in or if worker/admin
   useEffect(() => {
@@ -308,7 +309,6 @@ export default function BookServicePage() {
                     <ServiceCard
                       title={p.label}
                       subtitle={p.description}
-                      price={p.price}
                       color={sColor}
                       image={getServiceImage(p.id)}
                       onPress={() => setSelectedService(p.id)}
@@ -604,9 +604,23 @@ export default function BookServicePage() {
                   />
                 </div>
 
+                <div className={styles.termsCheckboxRow} onClick={() => setHasWaterElectricity(!hasWaterElectricity)}>
+                  <input
+                    type="checkbox"
+                    checked={hasWaterElectricity}
+                    onChange={(e) => setHasWaterElectricity(e.target.checked)}
+                    onClick={(e) => e.stopPropagation()}
+                    className={styles.termsCheckbox}
+                    id="terms-water-elec"
+                  />
+                  <label htmlFor="terms-water-elec" className={styles.termsText} onClick={(e) => e.stopPropagation()}>
+                    Customers must provide water and electricity at the service location to avail the car wash service.
+                  </label>
+                </div>
+
                 <button
                   onClick={handleConfirmBooking}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !hasWaterElectricity}
                   className={styles.confirmBtn}
                 >
                   {isSubmitting ? (

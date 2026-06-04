@@ -148,21 +148,37 @@ export function BookingsProvider({ children }: { children: React.ReactNode }) {
   async function loadBookings() {
     setIsLoading(true);
     try {
-      // Step 1: load bookings (without feedback join to avoid PostgREST FK alias issues)
-      const { data, error } = await supabase
+      // Step 1: load bookings without direct join to profiles
+      const { data: bookingsData, error } = await supabase
         .from("bookings")
-        .select(`
-          *,
-          user:user_id(name, phone),
-          worker:worker_id(name, phone)
-        `)
+        .select("*")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      if (data) {
+      if (bookingsData) {
+        // Collect all user and worker IDs to fetch profiles
+        const userIds = bookingsData.map((b: any) => b.user_id).filter(Boolean);
+        const workerIds = bookingsData.map((b: any) => b.worker_id).filter(Boolean);
+        const uniqueProfileIds = Array.from(new Set([...userIds, ...workerIds])) as string[];
+
+        // Fetch profiles separately
+        const profileMap: Record<string, { name: string; phone: string }> = {};
+        if (uniqueProfileIds.length > 0) {
+          const { data: profilesData } = await supabase
+            .from("profiles")
+            .select("id, name, phone")
+            .in("id", uniqueProfileIds);
+
+          if (profilesData) {
+            profilesData.forEach((p: any) => {
+              profileMap[p.id] = { name: p.name || "Unknown User", phone: p.phone || "" };
+            });
+          }
+        }
+
         // Step 2: collect all feedback_ids from completed bookings
-        const feedbackIds = data
+        const feedbackIds = bookingsData
           .map((b: any) => b.feedback_id)
           .filter(Boolean) as string[];
 
@@ -181,15 +197,15 @@ export function BookingsProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // Step 4: merge feedback into bookings
-        const formatted: Booking[] = data.map((b: any) => ({
+        // Step 4: merge profiles & feedbacks into bookings
+        const formatted: Booking[] = bookingsData.map((b: any) => ({
           id: b.id,
           userId: b.user_id,
-          userName: b.user?.name || "Unknown User",
-          userPhone: b.user?.phone || "",
+          userName: profileMap[b.user_id]?.name || "Unknown User",
+          userPhone: profileMap[b.user_id]?.phone || "",
           workerId: b.worker_id,
-          workerName: b.worker?.name,
-          workerPhone: b.worker?.phone,
+          workerName: b.worker_id ? (profileMap[b.worker_id]?.name || "Assigned Worker") : undefined,
+          workerPhone: b.worker_id ? (profileMap[b.worker_id]?.phone || "") : undefined,
           serviceType: b.service_type,
           serviceLabel: b.service_label,
           price: Number(b.price),
@@ -207,8 +223,8 @@ export function BookingsProvider({ children }: { children: React.ReactNode }) {
         }));
         setBookings(formatted);
       }
-    } catch (e) {
-      console.error("Error fetching bookings", e);
+    } catch (e: any) {
+      console.error("Error fetching bookings:", e.message || e);
     } finally {
       setIsLoading(false);
     }

@@ -45,7 +45,6 @@ export default function Home() {
             <ServiceCard
               title="Car Wash"
               subtitle="Spotless exterior & interior cleaning at your doorstep"
-              price="399"
               color="var(--primary)"
               image="/images/car_service.png"
               onPress={() => router.push(user ? "/book?service=car_wash" : "/login")}
@@ -53,7 +52,6 @@ export default function Home() {
             <ServiceCard
               title="Bike Wash"
               subtitle="Thorough clean & premium polish for your two-wheeler"
-              price="199"
               color="#f59e0b"
               image="/images/bike_service.png"
               onPress={() => router.push(user ? "/book?service=bike_wash" : "/login")}
@@ -61,7 +59,6 @@ export default function Home() {
             <ServiceCard
               title="Water Tank Cleaning"
               subtitle="Safe, hygienic water tank sanitization & disinfection"
-              price="0.5/L"
               color="#3b82f6"
               image="/images/tank_service.png"
               onPress={() => router.push(user ? "/book?service=water_tank" : "/login")}
