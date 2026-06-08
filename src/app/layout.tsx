@@ -23,6 +23,9 @@ export const metadata: Metadata = {
     apple: "/images/logo.png",
     shortcut: "/images/logo.png",
   },
+  verification: {
+    google: 'y9ZxZe6G2jHPO7ffToyXf_VW27o8-YnX_qDp2XyWVME',
+  },
 };
 
 export default function RootLayout({
