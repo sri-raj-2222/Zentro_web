@@ -225,6 +225,13 @@ export default function PricingManagerPage() {
                     ...baselinePrices,
                     [p.id]: Math.max(0, Number(e.target.value))
                   })}
+                  onBlur={() => handleUpdateBasePrice(p.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleUpdateBasePrice(p.id);
+                      (e.target as HTMLInputElement).blur();
+                    }
+                  }}
                   className={styles.priceInput}
                 />
                 <button
@@ -265,6 +272,13 @@ export default function PricingManagerPage() {
                       ...subTypePrices,
                       [st.id]: Math.max(0, Number(e.target.value))
                     })}
+                    onBlur={() => handleUpdateSubTypePrice(st.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleUpdateSubTypePrice(st.id);
+                        (e.target as HTMLInputElement).blur();
+                      }
+                    }}
                     className={styles.subPriceInput}
                   />
                   
@@ -311,6 +325,13 @@ export default function PricingManagerPage() {
                       ...subTypePrices,
                       [st.id]: Math.max(0, Number(e.target.value))
                     })}
+                    onBlur={() => handleUpdateSubTypePrice(st.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleUpdateSubTypePrice(st.id);
+                        (e.target as HTMLInputElement).blur();
+                      }
+                    }}
                     className={styles.subPriceInput}
                   />
                   
@@ -358,6 +379,13 @@ export default function PricingManagerPage() {
                       ...subTypePrices,
                       [st.id]: Math.max(0, Number(e.target.value))
                     })}
+                    onBlur={() => handleUpdateSubTypePrice(st.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleUpdateSubTypePrice(st.id);
+                        (e.target as HTMLInputElement).blur();
+                      }
+                    }}
                     className={styles.subPriceInput}
                   />
                   

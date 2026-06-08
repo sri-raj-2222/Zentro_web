@@ -305,7 +305,15 @@ export function AddressProvider({ children }: { children: React.ReactNode }) {
           }
         },
         (error) => {
-          resolve({ success: false, error: error.message || "Failed to fetch geolocation" });
+          let msg = "Location Services not available. Please check that GPS/Location is enabled in your device settings, or enter the address manually below.";
+          if (error.code === 1) { // PERMISSION_DENIED
+            msg = "Location permission denied. Please allow location access in your browser or device settings, or enter the address manually below.";
+          } else if (error.code === 2) { // POSITION_UNAVAILABLE
+            msg = "Location Services not available. Please check that GPS/Location is enabled in your device settings, or enter the address manually below.";
+          } else if (error.code === 3) { // TIMEOUT
+            msg = "Location request timed out. Please check your signal, or enter the address manually below.";
+          }
+          resolve({ success: false, error: msg });
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );

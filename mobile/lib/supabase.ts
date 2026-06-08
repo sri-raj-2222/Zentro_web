@@ -1,5 +1,29 @@
 import "react-native-url-polyfill/auto";
 import { createClient } from "@supabase/supabase-js";
+
+// Suppress noisy Supabase AuthApiError when refresh token is invalid or expired
+const originalConsoleError = console.error;
+console.error = (...args: any[]) => {
+  const errorMsg = args
+    .map((arg) => {
+      if (!arg) return "";
+      if (typeof arg === "object") {
+        return arg.message || arg.error_description || JSON.stringify(arg);
+      }
+      return String(arg);
+    })
+    .join(" ");
+
+  if (
+    errorMsg.includes("Refresh Token Not Found") ||
+    errorMsg.includes("refresh_token_not_found") ||
+    errorMsg.includes("invalid refresh token") ||
+    errorMsg.includes("Invalid Refresh Token")
+  ) {
+    return;
+  }
+  originalConsoleError(...args);
+};
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 

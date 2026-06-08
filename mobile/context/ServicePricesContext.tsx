@@ -68,6 +68,21 @@ export function ServicePricesProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     loadPrices();
+
+    const channel = supabase
+      .channel(`public:services_mobile_${Math.random().toString(36).slice(2, 7)}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "services" },
+        () => {
+          loadPrices();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   async function loadPrices() {
@@ -75,23 +90,61 @@ export function ServicePricesProvider({ children }: { children: React.ReactNode 
       // 1. Fetch main prices
       const { data: servicesData } = await supabase.from("services").select("*");
       if (servicesData && servicesData.length > 0) {
+        // Main services filter
+        const mainServiceIds = ["car_wash", "bike_wash", "water_tank"];
+        const mainServices = servicesData.filter((row) => mainServiceIds.includes(row.id));
         setPrices(
-          servicesData.map((row) => ({
-            id: row.id,
-            label: row.label,
-            emoji: row.emoji || "",
-            price: Number(row.price),
-            description: row.description || "",
-          }))
+          mainServices.map((row) => {
+            let desc = row.description || "";
+            try {
+              if (desc.trim().startsWith("{")) {
+                const parsed = JSON.parse(desc);
+                if (parsed && typeof parsed === "object" && parsed.description) {
+                  desc = parsed.description;
+                }
+              }
+            } catch (e) {
+              // Ignore and use original description
+            }
+            return {
+              id: row.id,
+              label: row.label,
+              emoji: row.emoji || "",
+              price: Number(row.price),
+              description: desc,
+            };
+          })
         );
-      }
 
-      // 2. Fetch or initialize sub types from local cache
-      const storedSubTypes = await AsyncStorage.getItem("@zentro_subtypes");
-      if (storedSubTypes) {
-        setSubTypes(JSON.parse(storedSubTypes));
-      } else {
-        setSubTypes(DEFAULT_SUBTYPES);
+        // Subtypes filter
+        const subtypeRows = servicesData.filter((row) => !mainServiceIds.includes(row.id));
+
+        if (subtypeRows.length === 0) {
+          // No subtypes in DB yet. Seed them so they exist.
+          const payload = DEFAULT_SUBTYPES.map((st) => ({
+            id: st.id,
+            label: st.typeName,
+            description: st.serviceName,
+            price: st.price,
+            emoji: st.isActive ? "active" : "inactive",
+          }));
+          await supabase.from("services").insert(payload);
+          setSubTypes(DEFAULT_SUBTYPES);
+        } else {
+          // Map database rows to ServiceSubType
+          const mappedSubtypes: ServiceSubType[] = subtypeRows.map((row) => {
+            const def = DEFAULT_SUBTYPES.find((d) => d.id === row.id);
+            return {
+              id: row.id,
+              serviceName: row.description as "car" | "bike" | "tank",
+              typeName: row.label,
+              price: Number(row.price),
+              isActive: row.emoji !== "inactive",
+              imageUrl: def?.imageUrl,
+            };
+          });
+          setSubTypes(mappedSubtypes);
+        }
       }
     } catch (e) {
       console.error("Error fetching service prices", e);
@@ -114,9 +167,13 @@ export function ServicePricesProvider({ children }: { children: React.ReactNode 
 
   async function updateSubTypePrice(id: string, price: number) {
     try {
-      const updated = subTypes.map((st) => (st.id === id ? { ...st, price } : st));
-      setSubTypes(updated);
-      await AsyncStorage.setItem("@zentro_subtypes", JSON.stringify(updated));
+      const { error } = await supabase
+        .from("services")
+        .update({ price })
+        .eq("id", id);
+      if (error) throw error;
+
+      setSubTypes((prev) => prev.map((st) => (st.id === id ? { ...st, price } : st)));
     } catch (e) {
       console.error("Error updating sub type price", e);
     }
@@ -124,9 +181,13 @@ export function ServicePricesProvider({ children }: { children: React.ReactNode 
 
   async function toggleSubTypeStatus(id: string, isActive: boolean) {
     try {
-      const updated = subTypes.map((st) => (st.id === id ? { ...st, isActive } : st));
-      setSubTypes(updated);
-      await AsyncStorage.setItem("@zentro_subtypes", JSON.stringify(updated));
+      const { error } = await supabase
+        .from("services")
+        .update({ emoji: isActive ? "active" : "inactive" })
+        .eq("id", id);
+      if (error) throw error;
+
+      setSubTypes((prev) => prev.map((st) => (st.id === id ? { ...st, isActive } : st)));
     } catch (e) {
       console.error("Error toggling sub type status", e);
     }
@@ -134,16 +195,26 @@ export function ServicePricesProvider({ children }: { children: React.ReactNode 
 
   async function addNewSubType(serviceName: "car" | "bike" | "tank", typeName: string, price: number) {
     try {
+      const id = `${serviceName}-${typeName.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
+      const { error } = await supabase
+        .from("services")
+        .insert({
+          id,
+          label: typeName,
+          description: serviceName,
+          price,
+          emoji: "active",
+        });
+      if (error) throw error;
+
       const newSubType: ServiceSubType = {
-        id: `${serviceName}-${typeName.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`,
+        id,
         serviceName,
         typeName,
         price,
         isActive: true,
       };
-      const updated = [...subTypes, newSubType];
-      setSubTypes(updated);
-      await AsyncStorage.setItem("@zentro_subtypes", JSON.stringify(updated));
+      setSubTypes((prev) => [...prev, newSubType]);
     } catch (e) {
       console.error("Error adding new sub type", e);
     }
@@ -151,9 +222,29 @@ export function ServicePricesProvider({ children }: { children: React.ReactNode 
 
   async function updateSubTypeComplete(id: string, updatedFields: Partial<ServiceSubType>) {
     try {
-      const updated = subTypes.map((st) => (st.id === id ? { ...st, ...updatedFields } : st));
-      setSubTypes(updated);
-      await AsyncStorage.setItem("@zentro_subtypes", JSON.stringify(updated));
+      const payload: any = {};
+      if (updatedFields.price !== undefined) {
+        payload.price = updatedFields.price;
+      }
+      if (updatedFields.typeName !== undefined) {
+        payload.label = updatedFields.typeName;
+      }
+      if (updatedFields.serviceName !== undefined) {
+        payload.description = updatedFields.serviceName;
+      }
+      if (updatedFields.isActive !== undefined) {
+        payload.emoji = updatedFields.isActive ? "active" : "inactive";
+      }
+
+      const { error } = await supabase
+        .from("services")
+        .update(payload)
+        .eq("id", id);
+      if (error) throw error;
+
+      setSubTypes((prev) =>
+        prev.map((st) => (st.id === id ? { ...st, ...updatedFields } : st))
+      );
     } catch (e) {
       console.error("Error updating subtype complete", e);
     }

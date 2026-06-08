@@ -311,7 +311,11 @@ export function AddressProvider({ children }: { children: React.ReactNode }) {
         address: `${latitude}, ${longitude}`,
       };
     } catch (e: any) {
-      return { success: false, error: e.message || "Failed to fetch current location" };
+      let msg = "Location services are unavailable. Please make sure GPS/Location is enabled in your device settings, or enter the address manually.";
+      if (e.message && !e.message.includes("Location provider")) {
+        msg = e.message;
+      }
+      return { success: false, error: msg };
     }
   }
 

@@ -174,7 +174,7 @@ export default function ProfilePage() {
         setNewLat(res.coords.latitude);
         setNewLng(res.coords.longitude);
       } else {
-        showFeedback("Failed to acquire location: " + (res.error || "Please allow GPS browser access."), true);
+        showFeedback(res.error || "Failed to acquire location. Please allow GPS browser access.", true);
       }
     } catch (e) {
       console.error(e);

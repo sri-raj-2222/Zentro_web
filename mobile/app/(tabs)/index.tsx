@@ -719,6 +719,22 @@ export default function HomeScreen() {
     (b) => b.status === "accepted" || b.status === "in_progress" || b.status === "pending"
   );
 
+  // Find lowest price for car wash
+  const carWashMinPrice = subTypes
+    .filter((s) => s.serviceName === "car" && s.isActive)
+    .reduce((min, s) => (s.price < min ? s.price : min), 9999);
+  const carPrice = carWashMinPrice !== 9999 ? carWashMinPrice.toString() : (prices.find(p => p.id === "car_wash")?.price.toString() || "399");
+
+  // Find lowest price for bike wash
+  const bikeWashMinPrice = subTypes
+    .filter((s) => s.serviceName === "bike" && s.isActive)
+    .reduce((min, s) => (s.price < min ? s.price : min), 9999);
+  const bikePrice = bikeWashMinPrice !== 9999 ? bikeWashMinPrice.toString() : (prices.find(p => p.id === "bike_wash")?.price.toString() || "199");
+
+  // Find cost per liter for water tank
+  const tankPricePerLiter = subTypes.find((s) => s.id === "tank-per-liter")?.price || 0.5;
+  const tankPrice = `${tankPricePerLiter}/L`;
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
@@ -767,9 +783,9 @@ export default function HomeScreen() {
 
         {/* Services */}
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>🧹 Our Services</Text>
-        <ServiceCard image={require("@/assets/images/car_service.png")} title="🚗 Car Wash" subtitle="Full exterior & interior cleaning" color="#dc2626" onPress={() => router.push({ pathname: "/book", params: { service: "car_wash" } })} />
-        <ServiceCard image={require("@/assets/images/bike_service.png")} title="🏍️ Bike Wash" subtitle="Thorough bike cleaning & polishing" color="#7c3aed" onPress={() => router.push({ pathname: "/book", params: { service: "bike_wash" } })} />
-        <ServiceCard image={require("@/assets/images/tank_service.png")} title="💧 Water Tank Cleaning" subtitle="Deep tank cleaning & sanitization" color="#059669" onPress={() => router.push({ pathname: "/book", params: { service: "water_tank" } })} />
+        <ServiceCard image={require("@/assets/images/car_service.png")} title="🚗 Car Wash" subtitle="Full exterior & interior cleaning" price={carPrice} color="#dc2626" onPress={() => router.push({ pathname: "/book", params: { service: "car_wash" } })} />
+        <ServiceCard image={require("@/assets/images/bike_service.png")} title="🏍️ Bike Wash" subtitle="Thorough bike cleaning & polishing" price={bikePrice} color="#7c3aed" onPress={() => router.push({ pathname: "/book", params: { service: "bike_wash" } })} />
+        <ServiceCard image={require("@/assets/images/tank_service.png")} title="💧 Water Tank Cleaning" subtitle="Deep tank cleaning & sanitization" price={tankPrice} color="#059669" onPress={() => router.push({ pathname: "/book", params: { service: "water_tank" } })} />
 
         <TouchableOpacity
           style={[styles.bookNowBtn, { backgroundColor: colors.primary }]}

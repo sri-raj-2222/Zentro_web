@@ -152,7 +152,7 @@ export default function BookServicePage() {
         setNewLat(res.coords.latitude);
         setNewLng(res.coords.longitude);
       } else {
-        setValidationError("Geolocation Error: " + (res.error || "Could not retrieve coordinates."));
+        setValidationError(res.error || "Geolocation Error: Could not retrieve coordinates.");
       }
     } catch (e: any) {
       console.error(e);

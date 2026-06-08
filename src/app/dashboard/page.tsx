@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useBookings, Booking, BookingStatus } from "@/context/BookingsContext";
 import { useAddress } from "@/context/AddressContext";
+import { useServicePrices } from "@/context/ServicePricesContext";
 import { BookingCard } from "@/components/BookingCard";
 import { StatCard } from "@/components/StatCard";
 import { FeedbackCard } from "@/components/FeedbackCard";
@@ -43,6 +44,7 @@ export default function DashboardPage() {
     updateWorkerStatus 
   } = useBookings();
   const { addresses } = useAddress();
+  const { prices, subTypes } = useServicePrices();
 
   const [activeFeedbackBooking, setActiveFeedbackBooking] = useState<Booking | null>(null);
   const [selectedWorkerForOverride, setSelectedWorkerForOverride] = useState<Record<string, string>>({});
@@ -139,6 +141,22 @@ export default function DashboardPage() {
 
     const defaultAddress = addresses.find(a => a.isDefault) || addresses[0];
 
+    // Find lowest price for car wash
+    const carWashMinPrice = subTypes
+      .filter((s) => s.serviceName === "car" && s.isActive)
+      .reduce((min, s) => (s.price < min ? s.price : min), 9999);
+    const carPrice = carWashMinPrice !== 9999 ? carWashMinPrice.toString() : (prices.find(p => p.id === "car_wash")?.price.toString() || "399");
+
+    // Find lowest price for bike wash
+    const bikeWashMinPrice = subTypes
+      .filter((s) => s.serviceName === "bike" && s.isActive)
+      .reduce((min, s) => (s.price < min ? s.price : min), 9999);
+    const bikePrice = bikeWashMinPrice !== 9999 ? bikeWashMinPrice.toString() : (prices.find(p => p.id === "bike_wash")?.price.toString() || "199");
+
+    // Find cost per liter for water tank
+    const tankPricePerLiter = subTypes.find((s) => s.id === "tank-per-liter")?.price || 0.5;
+    const tankPrice = `${tankPricePerLiter}/L`;
+
     return (
       <div className={styles.section}>
         <div className={styles.welcomeBanner}>
@@ -181,7 +199,7 @@ export default function DashboardPage() {
               <ServiceCard
                 title="Car Wash"
                 subtitle="Full exterior & interior cleaning"
-                price="399"
+                price={carPrice}
                 color="var(--primary)"
                 image="/images/car_service.png"
                 onPress={() => router.push("/book?service=car_wash")}
@@ -191,7 +209,7 @@ export default function DashboardPage() {
               <ServiceCard
                 title="Bike Wash"
                 subtitle="Thorough bike cleaning & polishing"
-                price="199"
+                price={bikePrice}
                 color="#f59e0b"
                 image="/images/bike_service.png"
                 onPress={() => router.push("/book?service=bike_wash")}
@@ -201,7 +219,7 @@ export default function DashboardPage() {
               <ServiceCard
                 title="Water Tank Cleaning"
                 subtitle="Deep tank cleaning & sanitization"
-                price="0.5/L"
+                price={tankPrice}
                 color="#3b82f6"
                 image="/images/tank_service.png"
                 onPress={() => router.push("/book?service=water_tank")}
