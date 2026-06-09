@@ -14,7 +14,8 @@ import {
   ToggleRight, 
   Car, 
   Bike, 
-  Droplets 
+  Droplets,
+  Loader
 } from "lucide-react";
 import Link from "next/link";
 import styles from "./page.module.css";
@@ -35,6 +36,8 @@ export default function PricingManagerPage() {
   const [baselinePrices, setBaselinePrices] = useState<Record<string, number>>({});
   // Subtype price edit states
   const [subTypePrices, setSubTypePrices] = useState<Record<string, number>>({});
+  // Track currently saving service/subtype ID to prevent double saves and show loading spinners
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   // Add new subtype state
   const [showAddForm, setShowAddForm] = useState(false);
@@ -79,15 +82,27 @@ export default function PricingManagerPage() {
   }
 
   const handleUpdateBasePrice = async (id: string) => {
+    if (savingId) return;
     const price = baselinePrices[id];
     if (price === undefined || price < 0) return;
-    await updatePrice(id, price);
+    setSavingId(id);
+    try {
+      await updatePrice(id, price);
+    } finally {
+      setSavingId(null);
+    }
   };
 
   const handleUpdateSubTypePrice = async (id: string) => {
+    if (savingId) return;
     const price = subTypePrices[id];
     if (price === undefined || price < 0) return;
-    await updateSubTypePrice(id, price);
+    setSavingId(id);
+    try {
+      await updateSubTypePrice(id, price);
+    } finally {
+      setSavingId(null);
+    }
   };
 
   const handleToggleSubType = async (id: string, currentStatus: boolean) => {
@@ -225,7 +240,6 @@ export default function PricingManagerPage() {
                     ...baselinePrices,
                     [p.id]: Math.max(0, Number(e.target.value))
                   })}
-                  onBlur={() => handleUpdateBasePrice(p.id)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       handleUpdateBasePrice(p.id);
@@ -233,13 +247,19 @@ export default function PricingManagerPage() {
                     }
                   }}
                   className={styles.priceInput}
+                  disabled={savingId !== null}
                 />
                 <button
                   onClick={() => handleUpdateBasePrice(p.id)}
                   className={styles.saveBtn}
                   title="Save Base Price"
+                  disabled={savingId !== null}
                 >
-                  <Save size={16} />
+                  {savingId === p.id ? (
+                    <Loader size={16} className={styles.spin} />
+                  ) : (
+                    <Save size={16} />
+                  )}
                 </button>
               </div>
             </div>
@@ -272,7 +292,6 @@ export default function PricingManagerPage() {
                       ...subTypePrices,
                       [st.id]: Math.max(0, Number(e.target.value))
                     })}
-                    onBlur={() => handleUpdateSubTypePrice(st.id)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         handleUpdateSubTypePrice(st.id);
@@ -280,14 +299,20 @@ export default function PricingManagerPage() {
                       }
                     }}
                     className={styles.subPriceInput}
+                    disabled={savingId !== null}
                   />
                   
                   <button
                     onClick={() => handleUpdateSubTypePrice(st.id)}
                     className={styles.subSaveBtn}
                     title="Save Rate"
+                    disabled={savingId !== null}
                   >
-                    <Save size={14} />
+                    {savingId === st.id ? (
+                      <Loader size={14} className={styles.spin} />
+                    ) : (
+                      <Save size={14} />
+                    )}
                   </button>
 
                   <button
@@ -325,7 +350,6 @@ export default function PricingManagerPage() {
                       ...subTypePrices,
                       [st.id]: Math.max(0, Number(e.target.value))
                     })}
-                    onBlur={() => handleUpdateSubTypePrice(st.id)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         handleUpdateSubTypePrice(st.id);
@@ -333,14 +357,20 @@ export default function PricingManagerPage() {
                       }
                     }}
                     className={styles.subPriceInput}
+                    disabled={savingId !== null}
                   />
                   
                   <button
                     onClick={() => handleUpdateSubTypePrice(st.id)}
                     className={styles.subSaveBtn}
                     title="Save Rate"
+                    disabled={savingId !== null}
                   >
-                    <Save size={14} />
+                    {savingId === st.id ? (
+                      <Loader size={14} className={styles.spin} />
+                    ) : (
+                      <Save size={14} />
+                    )}
                   </button>
 
                   <button
@@ -379,7 +409,6 @@ export default function PricingManagerPage() {
                       ...subTypePrices,
                       [st.id]: Math.max(0, Number(e.target.value))
                     })}
-                    onBlur={() => handleUpdateSubTypePrice(st.id)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         handleUpdateSubTypePrice(st.id);
@@ -387,14 +416,20 @@ export default function PricingManagerPage() {
                       }
                     }}
                     className={styles.subPriceInput}
+                    disabled={savingId !== null}
                   />
                   
                   <button
                     onClick={() => handleUpdateSubTypePrice(st.id)}
                     className={styles.subSaveBtn}
                     title="Save Rate"
+                    disabled={savingId !== null}
                   >
-                    <Save size={14} />
+                    {savingId === st.id ? (
+                      <Loader size={14} className={styles.spin} />
+                    ) : (
+                      <Save size={14} />
+                    )}
                   </button>
 
                   <button
