@@ -16,5 +16,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/jobs`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.7 },
     { url: `${baseUrl}/attendance`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.6 },
     { url: `${baseUrl}/admin/workers`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.5 },
-  ]
+  { url: `${baseUrl}/car-wash-warangal`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${baseUrl}/car-wash-hanamkonda`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${baseUrl}/car-wash-kazipet`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${baseUrl}/bike-wash-warangal`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${baseUrl}/water-tank-cleaning-warangal`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${baseUrl}/doorstep-car-wash-warangal`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },]
 }
