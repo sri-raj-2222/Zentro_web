@@ -391,3 +391,7 @@
 .toggleBtn.active {
   color: #10b981;
 }
+
+.spin {
+  animation: spin 1s linear infinite;
+}
