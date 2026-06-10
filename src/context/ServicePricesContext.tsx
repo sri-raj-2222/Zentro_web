@@ -88,7 +88,7 @@ export function ServicePricesProvider({ children }: { children: React.ReactNode 
   async function loadPrices() {
     try {
       // 1. Fetch main prices
-      const { data: servicesData } = await supabase.from("services").select("*");
+      const { data: servicesData } = await supabase.from("services").select("*").order("id");
       if (servicesData && servicesData.length > 0) {
         // Main services filter
         const mainServiceIds = ["car_wash", "bike_wash", "water_tank"];

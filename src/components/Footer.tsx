@@ -21,16 +21,19 @@ export function Footer() {
   return (
     <footer className={styles.footer}>
       <div className={styles.container}>
+        <div style={{ display: "flex", justifyContent: "center", gap: "20px", marginBottom: "12px" }}>
+          <a href="https://www.instagram.com/zentroofficial0" target="_blank" rel="noopener noreferrer" style={{ color: "#E1306C", fontSize: "24px" }}>
+            📷 Instagram
+          </a>
+          <a href="https://www.facebook.com/share/1PDEJKbDu5/" target="_blank" rel="noopener noreferrer" style={{ color: "#1877F2", fontSize: "24px" }}>
+            📘 Facebook
+          </a>
+        </div>
         <div className={styles.credits}>
           Made with <span className={styles.heart}>❤️</span> by{" "}
           {FOOTER_LINKS.map((link, index) => (
             <React.Fragment key={link.id}>
-              <a
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.link}
-              >
+              <a href={link.url} target="_blank" rel="noopener noreferrer" className={styles.link}>
                 {link.label}
               </a>
               {index < FOOTER_LINKS.length - 1 && (
