@@ -315,7 +315,7 @@ export function AddressProvider({ children }: { children: React.ReactNode }) {
           }
           resolve({ success: false, error: msg });
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
       );
     });
   }
