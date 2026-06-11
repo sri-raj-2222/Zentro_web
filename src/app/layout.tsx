@@ -16,15 +16,28 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Zentro - Premium Wash & Cleaning Services",
-  description: "Centralized professional vehicle wash and water tank cleaning services.",
+  title: "Zentro - Doorstep Car Wash & Water Tank Cleaning in Warangal",
+  description:
+    "Zentro offers doorstep car wash, bike wash & water tank cleaning in Warangal, Hanamkonda & Kazipet. Professional service at your home. Book now!",
+  keywords: [
+    "car wash near me",
+    "doorstep car wash Warangal",
+    "car wash Warangal",
+    "bike wash Warangal",
+    "water tank cleaning Warangal",
+    "sump cleaning Warangal",
+    "car wash Hanamkonda",
+    "car wash Kazipet",
+    "home car wash service",
+    "Zentro",
+  ],
   icons: {
     icon: "/images/logo.png",
     apple: "/images/logo.png",
-    shortcut: "/images/logo.png",
   },
+  shortcut: "/images/logo.png",
   verification: {
-    google: 'y9ZxZe6G2jHPO7ffToyXf_VW27o8-YnX_qDp2XyWVME',
+    google: "y9ZXZe6G2JHP07fFToYXf_VW27o8-YnX_qDp2YMWME",
   },
 };
 

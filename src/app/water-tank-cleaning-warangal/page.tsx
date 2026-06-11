@@ -2,10 +2,21 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Water Tank Cleaning in Warangal | Zentro',
-  description: 'Professional water tank cleaning service in Warangal. Book online at zentroservice.in',
-  keywords: 'water tank cleaning Warangal, tank cleaning service Warangal',
-}
+  title: "Water Tank Cleaning Service in Warangal | Zentro",
+  description:
+    "Overhead & underground sump cleaning in Warangal, Hanamkonda & Kazipet. Safe, affordable & professional water tank cleaning at your doorstep. Book now!",
+  keywords: [
+    "water tank cleaning Warangal",
+    "water tank cleaning near me",
+    "overhead tank cleaning Warangal",
+    "underground sump cleaning Warangal",
+    "water tank cleaning Hanamkonda",
+    "sump cleaning Kazipet",
+    "water tank disinfection service",
+    "tank cleaning service at home",
+    "Zentro water tank cleaning",
+  ],
+};
 
 export default function WaterTankWarangal() {
   return (
