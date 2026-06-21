@@ -13,6 +13,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  DeviceEventEmitter,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -41,6 +42,56 @@ export default function HomeScreen() {
   // Reviews state for workers
   const [workerReviews, setWorkerReviews] = useState<any[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+
+  // Unread notifications count
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchUnreadCount = async () => {
+      try {
+        const { count, error } = await supabase
+          .from("notifications")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .eq("read", false);
+        if (error) throw error;
+        setUnreadCount(count || 0);
+      } catch (e) {
+        console.error("Error fetching unread count:", e);
+      }
+    };
+
+    fetchUnreadCount();
+
+    // Subscribe to real-time notification changes to update the badge count
+    const channel = supabase
+      .channel(`unread_notifications_count_${user.id}_${Math.random().toString(36).slice(2, 7)}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          fetchUnreadCount();
+        }
+      )
+      .subscribe();
+
+    // Listen to local optimistic badge updates
+    const subscription = DeviceEventEmitter.addListener("updateUnreadCount", (count: number) => {
+      setUnreadCount(count);
+    });
+
+    return () => {
+      supabase.removeChannel(channel);
+      subscription.remove();
+    };
+  }, [user]);
 
   useEffect(() => {
     if (!user || user.role !== "worker") return;
@@ -260,13 +311,43 @@ export default function HomeScreen() {
               {user.name}
             </Text>
           </View>
-          <View style={[styles.logoBadge]}>
-            <View style={styles.miniLogoWrap}>
-              <Image
-                source={require("@/assets/images/zentro_logo.png")}
-                style={styles.miniLogo}
-                contentFit="cover"
-              />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push("/notifications");
+              }}
+              style={{ position: "relative", padding: 4 }}
+            >
+              <Feather name="bell" size={22} color={colors.foreground} />
+              {unreadCount > 0 && (
+                <View
+                  style={{
+                    position: "absolute",
+                    right: -2,
+                    top: -2,
+                    backgroundColor: colors.primary,
+                    borderRadius: 8,
+                    width: 16,
+                    height: 16,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text style={{ color: "#fff", fontSize: 9, fontWeight: "bold" }}>
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <View style={[styles.logoBadge]}>
+              <View style={styles.miniLogoWrap}>
+                <Image
+                  source={require("@/assets/images/zentro_logo.png")}
+                  style={styles.miniLogo}
+                  contentFit="cover"
+                />
+              </View>
             </View>
           </View>
         </View>
@@ -558,18 +639,48 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.adminHeader}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={[styles.greeting, { color: colors.mutedForeground }]}>
               🔧 Welcome back,
             </Text>
             <Text style={[styles.name, { color: colors.foreground }]}>{user.name}</Text>
           </View>
-          <View style={styles.miniLogoWrap}>
-            <Image
-              source={require("@/assets/images/zentro_logo.png")}
-              style={styles.miniLogo}
-              contentFit="cover"
-            />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push("/notifications");
+              }}
+              style={{ position: "relative", padding: 4 }}
+            >
+              <Feather name="bell" size={22} color={colors.foreground} />
+              {unreadCount > 0 && (
+                <View
+                  style={{
+                    position: "absolute",
+                    right: -2,
+                    top: -2,
+                    backgroundColor: colors.primary,
+                    borderRadius: 8,
+                    width: 16,
+                    height: 16,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text style={{ color: "#fff", fontSize: 9, fontWeight: "bold" }}>
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <View style={styles.miniLogoWrap}>
+              <Image
+                source={require("@/assets/images/zentro_logo.png")}
+                style={styles.miniLogo}
+                contentFit="cover"
+              />
+            </View>
           </View>
         </View>
 
@@ -756,12 +867,42 @@ export default function HomeScreen() {
             </Text>
             <Text style={[styles.name, { color: colors.foreground }]}>{user.name}</Text>
           </View>
-          <View style={styles.miniLogoWrap}>
-            <Image
-              source={require("@/assets/images/zentro_logo.png")}
-              style={styles.miniLogo}
-              contentFit="cover"
-            />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push("/notifications");
+              }}
+              style={{ position: "relative", padding: 4 }}
+            >
+              <Feather name="bell" size={22} color={colors.foreground} />
+              {unreadCount > 0 && (
+                <View
+                  style={{
+                    position: "absolute",
+                    right: -2,
+                    top: -2,
+                    backgroundColor: colors.primary,
+                    borderRadius: 8,
+                    width: 16,
+                    height: 16,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text style={{ color: "#fff", fontSize: 9, fontWeight: "bold" }}>
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <View style={styles.miniLogoWrap}>
+              <Image
+                source={require("@/assets/images/zentro_logo.png")}
+                style={styles.miniLogo}
+                contentFit="cover"
+              />
+            </View>
           </View>
         </View>
 

@@ -105,7 +105,7 @@ begin
 
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public, pg_temp;
 
 -- Trigger for feedback insertion
 drop trigger if exists on_feedback_inserted on public.feedbacks;
@@ -253,3 +253,203 @@ insert into public.services (id, label, emoji, price, description) values
   ('bike_wash', 'Bike Wash', '🏍️', 249, 'Thorough bike cleaning & polishing'),
   ('water_tank', 'Water Tank Cleaning', '💧', 799, 'Deep tank cleaning & sanitization')
 on conflict (id) do nothing;
+
+-- --------------------------------------------------------
+-- SECURITY HARDENING & LINTER FIXES
+-- --------------------------------------------------------
+
+-- 1. Revoke public/anon/authenticated execute access on security definer functions
+-- This prevents unauthorized execution of these database trigger/internal helper functions via PostgREST RPC.
+revoke execute on function public.handle_new_feedback() from public;
+revoke execute on function public.send_push_notification_trigger() from public;
+revoke execute on function public.handle_new_booking_notification() from public;
+revoke execute on function public.handle_booking_update_notification() from public;
+
+-- Use PL/pgSQL block to conditionally apply fixes for functions and storage policies 
+-- that might be defined outside this schema file or schema context, preventing errors on clean schema runs.
+do $$
+begin
+  -- Revoke execute on public.handle_new_user if it exists
+  if exists (
+    select 1 from pg_proc p 
+    join pg_namespace n on p.pronamespace = n.oid 
+    where n.nspname = 'public' and p.proname = 'handle_new_user'
+  ) then
+    execute 'revoke execute on function public.handle_new_user() from public';
+  end if;
+
+  -- Revoke execute on public.has_role if it exists
+  if exists (
+    select 1 from pg_proc p 
+    join pg_namespace n on p.pronamespace = n.oid 
+    where n.nspname = 'public' and p.proname = 'has_role'
+  ) then
+    execute 'revoke execute on function public.has_role(uuid, public.app_role) from public';
+  end if;
+
+  -- 2. Restrict public bucket listing for "profile-images"
+  -- Dropping the broad SELECT policy on storage.objects prevents clients from listing all files,
+  -- while still allowing public read access to files via their direct public URLs.
+  if exists (
+    select 1 from pg_tables 
+    where schemaname = 'storage' and tablename = 'objects'
+  ) then
+    execute 'drop policy if exists "Anyone can view profile images" on storage.objects';
+  end if;
+end;
+$$;
+
+-- --------------------------------------------------------
+-- NOTIFICATION SYSTEM SETUP
+-- --------------------------------------------------------
+
+-- Create extensions schema and install pg_net there to prevent extension in public warning
+create schema if not exists extensions;
+create extension if not exists pg_net with schema extensions;
+
+-- 1. Add expo_push_token column to profiles table
+alter table public.profiles add column if not exists expo_push_token text;
+
+-- 2. Create notifications table
+create table if not exists public.notifications (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  title text not null,
+  body text not null,
+  data jsonb default '{}'::jsonb,
+  read boolean not null default false,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Index user_id and read to speed up query performance
+create index if not exists notifications_user_id_idx on public.notifications(user_id);
+create index if not exists notifications_read_idx on public.notifications(read);
+
+-- 3. Row Level Security for notifications
+alter table public.notifications enable row level security;
+
+drop policy if exists "Users can read own notifications" on public.notifications;
+create policy "Users can read own notifications" on public.notifications
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "Users can update own notifications" on public.notifications;
+create policy "Users can update own notifications" on public.notifications
+  for update using (auth.uid() = user_id);
+
+-- We drop "System can create notifications" INSERT policy as it is always true and bypasses row-level security.
+-- Database triggers run with superuser (postgres) privileges, which bypasses RLS naturally. Clients do not need INSERT permission.
+drop policy if exists "System can create notifications" on public.notifications;
+
+-- 4. Push Notification Function & Trigger using pg_net
+create or replace function public.send_push_notification_trigger()
+returns trigger as $$
+declare
+  v_push_token text;
+begin
+  -- Get the recipient's expo push token
+  select expo_push_token into v_push_token
+  from public.profiles
+  where id = new.user_id;
+
+  -- If the token exists and is valid, send it via pg_net (asynchronous http request)
+  if v_push_token is not null and v_push_token <> '' then
+    perform net.http_post(
+      url := 'https://exp.host/--/api/v2/push/send',
+      headers := '{"Content-Type": "application/json"}'::jsonb,
+      body := jsonb_build_object(
+        'to', v_push_token,
+        'title', new.title,
+        'body', new.body,
+        'sound', 'default',
+        'data', coalesce(new.data, '{}'::jsonb)
+      ),
+      timeout_ms := 5000
+    );
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+
+-- Trigger to send push notification on notification creation
+drop trigger if exists on_notification_created on public.notifications;
+create trigger on_notification_created
+  after insert on public.notifications
+  for each row execute function public.send_push_notification_trigger();
+
+-- 5. Booking Notification Triggers
+
+-- Trigger function for new bookings (Notifies admin and workers)
+create or replace function public.handle_new_booking_notification()
+returns trigger as $$
+declare
+  r_profile record;
+begin
+  -- Notify all admins and workers
+  for r_profile in 
+    select id from public.profiles 
+    where role in ('admin', 'worker')
+  loop
+    insert into public.notifications (user_id, title, body, data)
+    values (
+      r_profile.id,
+      'New Booking Request 🚗',
+      'A new booking for ' || new.service_label || ' has been requested at ' || new.location || '.',
+      jsonb_build_object(
+        'booking_id', new.id,
+        'type', 'new_booking'
+      )
+    );
+  end loop;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+
+drop trigger if exists on_booking_created on public.bookings;
+create trigger on_booking_created
+  after insert on public.bookings
+  for each row execute function public.handle_new_booking_notification();
+
+-- Trigger function for booking updates (Notifies customer when accepted/completed)
+create or replace function public.handle_booking_update_notification()
+returns trigger as $$
+declare
+  v_worker_name text;
+begin
+  -- Case A: Booking accepted by worker
+  if new.status = 'accepted' and old.status = 'pending' and new.worker_id is not null then
+    select name into v_worker_name from public.profiles where id = new.worker_id;
+
+    insert into public.notifications (user_id, title, body, data)
+    values (
+      new.user_id,
+      'Booking Accepted! 🛠️',
+      coalesce(v_worker_name, 'A worker') || ' has accepted your booking request for ' || new.service_label || '.',
+      jsonb_build_object(
+        'booking_id', new.id,
+        'type', 'booking_accepted'
+      )
+    );
+  end if;
+
+  -- Case B: Booking completed
+  if new.status = 'completed' and old.status <> 'completed' then
+    insert into public.notifications (user_id, title, body, data)
+    values (
+      new.user_id,
+      'Service Completed! ✅',
+      'Your booking for ' || new.service_label || ' has been marked as completed. Please leave your feedback.',
+      jsonb_build_object(
+        'booking_id', new.id,
+        'type', 'booking_completed'
+      )
+    );
+  end if;
+
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+
+drop trigger if exists on_booking_updated on public.bookings;
+create trigger on_booking_updated
+  after update on public.bookings
+  for each row execute function public.handle_booking_update_notification();

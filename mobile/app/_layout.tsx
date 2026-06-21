@@ -18,12 +18,17 @@ import { AuthProvider } from "@/context/AuthContext";
 import { BookingsProvider } from "@/context/BookingsContext";
 import { ServicePricesProvider } from "@/context/ServicePricesContext";
 import { AddressProvider } from "@/context/AddressContext";
+import { useAuth } from "@/context/AuthContext";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 SplashScreen.preventAutoHideAsync();
 
 
 
 function RootLayoutNav() {
+  const { user } = useAuth();
+  usePushNotifications(user?.id);
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -41,6 +46,7 @@ function RootLayoutNav() {
       <Stack.Screen name="addresses" options={{ headerShown: false, presentation: "modal" }} />
       <Stack.Screen name="forgot-password" options={{ headerShown: false, presentation: "fullScreenModal" }} />
       <Stack.Screen name="charges" options={{ headerShown: false }} />
+      <Stack.Screen name="notifications" options={{ headerShown: false, presentation: "modal" }} />
     </Stack>
   );
 }

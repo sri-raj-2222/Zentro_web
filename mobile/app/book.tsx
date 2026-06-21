@@ -110,6 +110,7 @@ export default function BookScreen() {
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [hasWaterElectricity, setHasWaterElectricity] = useState(false);
 
   const activeServiceMeta = SERVICE_META.find((s) => s.id === selectedService);
 
@@ -248,6 +249,11 @@ export default function BookScreen() {
 
     if (!scheduledDate) {
       setError("Please enter or pick a valid scheduled date");
+      return;
+    }
+
+    if (!hasWaterElectricity) {
+      setError("Please agree to the water and electricity terms.");
       return;
     }
 
@@ -726,6 +732,28 @@ export default function BookScreen() {
             </View>
           )}
 
+          {/* Terms checkbox row */}
+          <TouchableOpacity
+            style={styles.termsCheckboxRow}
+            onPress={() => setHasWaterElectricity(!hasWaterElectricity)}
+            activeOpacity={0.8}
+          >
+            <View
+              style={[
+                styles.checkSquare,
+                {
+                  borderColor: colors.primary,
+                  backgroundColor: hasWaterElectricity ? colors.primary : "transparent",
+                },
+              ]}
+            >
+              {hasWaterElectricity && <Feather name="check" size={14} color="#fff" />}
+            </View>
+            <Text style={[styles.termsText, { color: colors.foreground }]}>
+              Customers must provide water and electricity at the service location to avail the car wash service.
+            </Text>
+          </TouchableOpacity>
+
           {/* Booking Trigger */}
           <TouchableOpacity
             style={[
@@ -736,7 +764,8 @@ export default function BookScreen() {
                   !selectedService ||
                   (selectedService !== "water_tank" && !selectedSubType) ||
                   (selectedService === "water_tank" && !tankCapacity) ||
-                  !scheduledDate
+                  !scheduledDate ||
+                  !hasWaterElectricity
                     ? 0.6
                     : 1,
               },
@@ -747,7 +776,8 @@ export default function BookScreen() {
               !selectedService ||
               (selectedService !== "water_tank" && !selectedSubType) ||
               (selectedService === "water_tank" && !tankCapacity) ||
-              !scheduledDate
+              !scheduledDate ||
+              !hasWaterElectricity
             }
             activeOpacity={0.85}
           >
@@ -960,5 +990,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 10,
     marginTop: 18,
+  },
+  termsCheckboxRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 18,
+    paddingVertical: 6,
+  },
+  checkSquare: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  termsText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
   },
 });

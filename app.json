@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "9032c8ec-7ab3-4d0a-9f6b-fdaa124f1bc6"
+      }
+    },
+    "android": {
+      "package": "com.sri_raj_2222.webtemp"
+    }
+  }
+}
