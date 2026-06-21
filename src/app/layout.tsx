@@ -33,9 +33,9 @@ export const metadata: Metadata = {
   ],
   icons: {
     icon: "/images/logo.png",
+    shortcut: "/images/logo.png",
     apple: "/images/logo.png",
   },
-  shortcut: "/images/logo.png",
   verification: {
     google: "y9ZXZe6G2JHP07fFToYXf_VW27o8-YnX_qDp2YMWME",
   },
