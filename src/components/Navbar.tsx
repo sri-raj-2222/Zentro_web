@@ -60,7 +60,7 @@ export function Navbar() {
       <nav className={styles.navContainer}>
         {/* Logo */}
         <Link href={user ? "/dashboard" : "/"} className={styles.logo}>
-          <img src="/images/logo.png" alt="Zentro Logo" className={styles.logoImage} />
+          <img src="/images/logo.png"alt="Zentro doorstep car wash service Warangal" className={styles.logoImage} />
           <span>ZENTRO</span>
         </Link>
 

@@ -2,10 +2,21 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Car Wash in Kazipet - Doorstep Service | Zentro',
-  description: 'Professional doorstep car wash service in Kazipet. Book online at zentroservice.in',
-  keywords: 'car wash Kazipet, doorstep car wash Kazipet, vehicle cleaning Kazipet',
-}
+  title: "Car Wash in Kazipet - Doorstep Service | Zentro",
+  description:
+    "Professional doorstep car wash service in Kazipet. Zentro brings interior & exterior car cleaning & bike wash to your home. Book now!",
+  keywords: [
+    "car wash Kazipet",
+    "doorstep car wash Kazipet",
+    "car wash near me Kazipet",
+    "car cleaning service Kazipet",
+    "bike wash Kazipet",
+    "interior car cleaning Kazipet",
+    "vehicle cleaning Kazipet",
+    "car wash at home Kazipet",
+    "Zentro Kazipet",
+  ],
+};
 
 export default function CarWashKazipet() {
   return (

@@ -2,10 +2,21 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Bike Wash in Warangal - Doorstep Service | Zentro',
-  description: 'Professional doorstep bike wash service in Warangal. Book online at zentroservice.in',
-  keywords: 'bike wash Warangal, doorstep bike wash Warangal, two wheeler cleaning Warangal',
-}
+  title: "Bike Wash in Warangal - Doorstep Service | Zentro",
+  description:
+    "Professional doorstep bike wash & two wheeler cleaning in Warangal, Hanamkonda & Kazipet. Affordable prices at your home. Book now with Zentro!",
+  keywords: [
+    "bike wash Warangal",
+    "doorstep bike wash Warangal",
+    "two wheeler cleaning Warangal",
+    "bike wash near me",
+    "bike cleaning service Warangal",
+    "two wheeler wash at home",
+    "bike wash Hanamkonda",
+    "bike wash Kazipet",
+    "Zentro bike wash",
+  ],
+};
 
 export default function BikeWashWarangal() {
   return (
