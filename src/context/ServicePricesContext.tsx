@@ -66,25 +66,6 @@ export function ServicePricesProvider({ children }: { children: React.ReactNode 
   const [subTypes, setSubTypes] = useState<ServiceSubType[]>(DEFAULT_SUBTYPES);
   const { user } = useAuth();
 
-  useEffect(() => {
-    loadPrices();
-
-    const channel = supabase
-      .channel(`public:services_${Math.random().toString(36).slice(2, 7)}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "services" },
-        () => {
-          loadPrices();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
-
   async function loadPrices() {
     try {
       // 1. Fetch main prices
@@ -150,6 +131,25 @@ export function ServicePricesProvider({ children }: { children: React.ReactNode 
       console.error("Error fetching service prices", e);
     }
   }
+
+  useEffect(() => {
+    loadPrices();
+
+    const channel = supabase
+      .channel(`public:services_${Math.random().toString(36).slice(2, 7)}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "services" },
+        () => {
+          loadPrices();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   async function updatePrice(id: string, price: number) {
     try {

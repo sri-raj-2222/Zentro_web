@@ -36,15 +36,6 @@ export function AddressProvider({ children }: { children: React.ReactNode }) {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      loadAddresses();
-    } else {
-      setAddresses([]);
-      setIsLoading(false);
-    }
-  }, [user]);
-
   async function loadAddresses() {
     if (!user) return;
     setIsLoading(true);
@@ -97,6 +88,15 @@ export function AddressProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (user) {
+      loadAddresses();
+    } else {
+      setAddresses([]);
+      setIsLoading(false);
+    }
+  }, [user]);
 
   async function saveToLocalStorage(updatedAddresses: Address[]) {
     if (!user || typeof window === "undefined") return;
@@ -209,7 +209,7 @@ export function AddressProvider({ children }: { children: React.ReactNode }) {
     if (!user) return { success: false, error: "No user authenticated" };
 
     const addressToDelete = addresses.find((a) => a.id === id);
-    let updatedList = addresses.filter((a) => a.id !== id);
+    const updatedList = addresses.filter((a) => a.id !== id);
 
     if (addressToDelete?.isDefault && updatedList.length > 0) {
       updatedList[0].isDefault = true;
@@ -268,55 +268,107 @@ export function AddressProvider({ children }: { children: React.ReactNode }) {
       return { success: false, error: "Geolocation is not supported by this browser" };
     }
 
-    return new Promise((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          try {
-            // HTML5 Geolocation Reverse lookup using OpenStreetMap Nominatim API
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=en`
-            );
-            if (!response.ok) throw new Error("Nominatim API response failed");
-            
-            const data = await response.json();
-            const addr = data.address;
-            const full = data.display_name || `${latitude}, ${longitude}`;
+    const getBrowserPosition = (enableHighAccuracy: boolean): Promise<GeolocationPosition> => {
+      return new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy,
+          timeout: 8000,
+          maximumAge: 15000,
+        });
+      });
+    };
 
-            resolve({
-              success: true,
-              coords: { latitude, longitude },
-              address: full,
-              data: {
-                street: addr.road || addr.suburb || "",
-                city: addr.city || addr.town || addr.village || "",
-                state: addr.state || "",
-                country: addr.country || "",
-                pincode: addr.postcode || "",
-              },
-            });
-          } catch (e: any) {
-            console.error("OSM Reverse Geocoding failed:", e);
-            resolve({
-              success: true,
-              coords: { latitude, longitude },
-              address: `${latitude}, ${longitude}`,
-            });
-          }
-        },
-        (error) => {
+    return new Promise(async (resolve) => {
+      let position: GeolocationPosition;
+      
+      // Try high-accuracy (GPS preferred) first
+      try {
+        position = await getBrowserPosition(true);
+      } catch (highAccuracyError: any) {
+        console.warn("[AddressContext] Web high-accuracy query failed, falling back to coarse lookup:", highAccuracyError.message);
+        
+        // Try fallback to standard/coarse lookup
+        try {
+          position = await getBrowserPosition(false);
+        } catch (coarseError: any) {
+          console.error("[AddressContext] Web geolocation failed completely:", coarseError.message);
           let msg = "Location Services not available. Please check that GPS/Location is enabled in your device settings, or enter the address manually below.";
-          if (error.code === 1) { // PERMISSION_DENIED
-            msg = "Location permission denied. Please allow location access in your browser or device settings, or enter the address manually below.";
-          } else if (error.code === 2) { // POSITION_UNAVAILABLE
-            msg = "Location Services not available. Please check that GPS/Location is enabled in your device settings, or enter the address manually below.";
-          } else if (error.code === 3) { // TIMEOUT
-            msg = "Location request timed out. Please check your signal, or enter the address manually below.";
+          if (coarseError.code === 1) { // PERMISSION_DENIED
+            msg = "Location permission denied. Please allow location access in your browser settings, or enter the address manually below.";
+          } else if (coarseError.code === 3) { // TIMEOUT
+            msg = "Location request timed out. Please check your network connection, or enter the address manually below.";
           }
           resolve({ success: false, error: msg });
-        },
-        { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
-      );
+          return;
+        }
+      }
+
+      const { latitude, longitude } = position.coords;
+
+      // Validate coordinates
+      if (
+        isNaN(latitude) ||
+        isNaN(longitude) ||
+        latitude < -90 ||
+        latitude > 90 ||
+        longitude < -180 ||
+        longitude > 180 ||
+        (latitude === 0 && longitude === 0)
+      ) {
+        resolve({
+          success: false,
+          error: "Detected coordinates are invalid. Please check your location settings."
+        });
+        return;
+      }
+
+      // Nominatim Reverse lookup with retry logic (up to 3 retries with exponential backoff)
+      let reverseGeoData: any = null;
+      const maxRetries = 3;
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=en&email=Zentroofficial@gmail.com`
+          );
+          if (!response.ok) {
+            throw new Error(`HTTP status ${response.status}`);
+          }
+          reverseGeoData = await response.json();
+          break;
+        } catch (err: any) {
+          console.warn(`[AddressContext] Nominatim geocoding attempt ${attempt + 1} failed:`, err.message);
+          if (attempt === maxRetries - 1) {
+            console.error("[AddressContext] All Nominatim reverse geocoding attempts failed.");
+          } else {
+            await new Promise((r) => setTimeout(r, 500 * Math.pow(2, attempt)));
+          }
+        }
+      }
+
+      if (reverseGeoData) {
+        const addr = reverseGeoData.address || {};
+        const full = reverseGeoData.display_name || `${latitude}, ${longitude}`;
+
+        resolve({
+          success: true,
+          coords: { latitude, longitude },
+          address: full,
+          data: {
+            street: addr.road || addr.suburb || "",
+            city: addr.city || addr.town || addr.village || "",
+            state: addr.state || "",
+            country: addr.country || "",
+            pincode: addr.postcode || "",
+          },
+        });
+      } else {
+        // Fallback to coords-only address if reverse geocoding failed completely
+        resolve({
+          success: true,
+          coords: { latitude, longitude },
+          address: `${latitude}, ${longitude}`,
+        });
+      }
     });
   }
 

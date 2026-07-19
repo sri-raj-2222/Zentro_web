@@ -23,6 +23,27 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import styles from "./page.module.css";
+import dynamic from "next/dynamic";
+
+const MapPicker = dynamic(() => import("@/components/MapPicker"), {
+  ssr: false,
+  loading: () => (
+    <div style={{
+      height: 260,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "var(--card, #1e293b)",
+      border: "1px solid var(--border, #334155)",
+      borderRadius: 8,
+      color: "var(--muted-foreground, #94a3b8)",
+      fontSize: 14,
+      marginBottom: "20px"
+    }}>
+      Loading Map View...
+    </div>
+  )
+});
 
 type Step = 1 | 2 | 3;
 
@@ -444,10 +465,26 @@ export default function BookServicePage() {
                   onClick={handleFetchCurrentLocation}
                   disabled={isLocating}
                   className={styles.locateBtn}
+                  style={{ marginBottom: "16px" }}
                 >
                   <Compass size={16} className={isLocating ? "animate-spin" : ""} />
                   <span>{isLocating ? "Locating..." : "Use Current Geolocation"}</span>
                 </button>
+
+                <MapPicker
+                  lat={newLat}
+                  lng={newLng}
+                  onChange={(lat, lng, details) => {
+                    setNewLat(lat);
+                    setNewLng(lng);
+                    if (details?.success && details.data) {
+                      setNewFullAddress(details.address || "");
+                      setNewCity(details.data.city || "");
+                      setNewState(details.data.state || "");
+                      setNewPincode(details.data.pincode || "");
+                    }
+                  }}
+                />
 
                 <div className={styles.formGroup}>
                   <label>Full Address / Landmark</label>
@@ -491,6 +528,31 @@ export default function BookServicePage() {
                       value={newPincode}
                       onChange={(e) => setNewPincode(e.target.value)}
                       placeholder="6-digit Pincode"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label>Latitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={newLat}
+                      onChange={(e) => setNewLat(parseFloat(e.target.value) || 0)}
+                      placeholder="Latitude"
+                      required
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Longitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={newLng}
+                      onChange={(e) => setNewLng(parseFloat(e.target.value) || 0)}
+                      placeholder="Longitude"
                       required
                     />
                   </div>
