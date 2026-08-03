@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1082625196675",
+    "project_id": "zentro-acdf3",
+    "storage_bucket": "zentro-acdf3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1082625196675:android:2d01a4ac5d257dfc1791b6",
+        "android_client_info": {
+          "package_name": "com.sri_raj_2222.zentro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAeU-W_PypGpr1kui2UEHXloDM-1nUlvSM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

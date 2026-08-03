@@ -58,10 +58,6 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
   const { user } = useAuth();
   const { bookings } = useBookings();
 
-  useEffect(() => {
-    loadData();
-  }, [user]);
-
   async function loadData() {
     try {
       // Load attendance
@@ -98,6 +94,10 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
       console.error("Error loading attendance data", e);
     }
   }
+
+  useEffect(() => {
+    loadData();
+  }, [user]);
 
   async function markAttendance(
     workerId: string,

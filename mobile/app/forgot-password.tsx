@@ -39,20 +39,6 @@ export default function ForgotPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    // 1. Check initial launch via deep link URL
-    Linking.getInitialURL().then((url) => {
-      if (url) handleURL(url);
-    });
-
-    // 2. Listener for foreground deep links
-    const sub = Linking.addEventListener("url", (event) => {
-      handleURL(event.url);
-    });
-
-    return () => sub.remove();
-  }, []);
-
   const handleURL = async (url: string) => {
     if (!url) return;
     try {
@@ -91,6 +77,20 @@ export default function ForgotPasswordScreen() {
       console.error("Link parsing error", e);
     }
   };
+
+  useEffect(() => {
+    // 1. Check initial launch via deep link URL
+    Linking.getInitialURL().then((url) => {
+      if (url) handleURL(url);
+    });
+
+    // 2. Listener for foreground deep links
+    const sub = Linking.addEventListener("url", (event) => {
+      handleURL(event.url);
+    });
+
+    return () => sub.remove();
+  }, []);
 
   async function handleSendOtp() {
     setError("");

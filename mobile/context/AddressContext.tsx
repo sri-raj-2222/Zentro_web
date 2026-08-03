@@ -36,15 +36,6 @@ export function AddressProvider({ children }: { children: React.ReactNode }) {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      loadAddresses();
-    } else {
-      setAddresses([]);
-      setIsLoading(false);
-    }
-  }, [user]);
-
   async function loadAddresses() {
     if (!user) return;
     setIsLoading(true);
@@ -95,6 +86,15 @@ export function AddressProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (user) {
+      loadAddresses();
+    } else {
+      setAddresses([]);
+      setIsLoading(false);
+    }
+  }, [user]);
 
   async function saveToAsyncStorage(updatedAddresses: Address[]) {
     if (!user) return;
@@ -210,7 +210,7 @@ export function AddressProvider({ children }: { children: React.ReactNode }) {
     if (!user) return { success: false, error: "No user authenticated" };
 
     const addressToDelete = addresses.find((a) => a.id === id);
-    let updatedList = addresses.filter((a) => a.id !== id);
+    const updatedList = addresses.filter((a) => a.id !== id);
 
     // If we delete default, mark first available address as default
     if (addressToDelete?.isDefault && updatedList.length > 0) {
@@ -269,19 +269,116 @@ export function AddressProvider({ children }: { children: React.ReactNode }) {
 
   async function fetchCurrentLocation() {
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
+      // 1. Check if location services are enabled on the device
+      const servicesEnabled = await Location.hasServicesEnabledAsync();
+      if (!servicesEnabled) {
+        return {
+          success: false,
+          error: "Location services are disabled on this device. Please turn on GPS/Location in your settings and try again."
+        };
+      }
+
+      // 2. Request foreground location permission
+      const { status, android } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         return { success: false, error: "Location permission denied" };
       }
 
-      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      // Warn/Note if accuracy is approximate (coarse) on Android 12+
+      let coarseWarning = "";
+      if (android && android.accuracy === "coarse") {
+        coarseWarning = "Using approximate location. For better accuracy, please enable precise location.";
+        console.log("[AddressContext] Coarse location granted:", coarseWarning);
+      }
+
+      // 3. Acquire location with fallback strategy (GPS -> Cache -> Balanced)
+      let location: Location.LocationObject | null = null;
+      
+      // Try fresh high-accuracy GPS fix first with an 8s timeout
+      try {
+        location = await Promise.race([
+          Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High,
+          }),
+          new Promise<null>((_, reject) =>
+            setTimeout(() => reject(new Error("Timeout waiting for GPS lock")), 8000)
+          ),
+        ]);
+      } catch (freshErr: any) {
+        console.log("[AddressContext] Fresh high-accuracy query failed or timed out:", freshErr.message);
+      }
+
+      // Fallback 1: Try getting the last known position (cached)
+      if (!location) {
+        try {
+          const cachedLoc = await Location.getLastKnownPositionAsync({
+            maxAge: 300000, // 5 minutes max age
+          });
+          if (cachedLoc) {
+            console.log("[AddressContext] Found cached location fallback:", cachedLoc);
+            location = cachedLoc;
+          }
+        } catch (cachedErr: any) {
+          console.log("[AddressContext] Failed to get cached location:", cachedErr.message);
+        }
+      }
+
+      // Fallback 2: Try getCurrentPositionAsync with Balanced accuracy
+      if (!location) {
+        try {
+          console.log("[AddressContext] Attempting balanced accuracy as last resort...");
+          location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+        } catch (balancedErr: any) {
+          console.log("[AddressContext] Balanced location lookup failed:", balancedErr.message);
+        }
+      }
+
+      if (!location || !location.coords) {
+        return {
+          success: false,
+          error: "Failed to determine your position. Please check your signal or enter your address manually."
+        };
+      }
+
       const { latitude, longitude } = location.coords;
 
+      // 4. Validate coordinates
+      if (
+        isNaN(latitude) ||
+        isNaN(longitude) ||
+        latitude < -90 ||
+        latitude > 90 ||
+        longitude < -180 ||
+        longitude > 180 ||
+        (latitude === 0 && longitude === 0)
+      ) {
+        return {
+          success: false,
+          error: "Detected coordinates are invalid. Please check your device location settings."
+        };
+      }
+
+      // 5. Geocoding with a retry loop (up to 3 attempts with exponential backoff)
       let reverseGeo: any = null;
-      try {
-        reverseGeo = await Location.reverseGeocodeAsync({ latitude, longitude });
-      } catch (e) {
-        console.error("Reverse geocoding with expo-location failed:", e);
+      const maxRetries = 3;
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          reverseGeo = await Location.reverseGeocodeAsync({ latitude, longitude });
+          if (reverseGeo && reverseGeo.length > 0) {
+            break;
+          }
+        } catch (geocoderErr: any) {
+          console.warn(`[AddressContext] Reverse geocoding attempt ${attempt + 1} failed:`, geocoderErr.message);
+          if (attempt === maxRetries - 1) {
+            // Final attempt failed, log it and keep going with coords-only address
+            console.error("[AddressContext] All reverse geocoding attempts failed.");
+          } else {
+            // Exponential backoff wait (e.g. 500ms, 1000ms)
+            await new Promise((r) => setTimeout(r, 500 * Math.pow(2, attempt)));
+          }
+        }
       }
 
       if (reverseGeo && reverseGeo.length > 0) {

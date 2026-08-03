@@ -87,9 +87,14 @@ export default function HomeScreen() {
       setUnreadCount(count);
     });
 
+    const refreshSub = DeviceEventEmitter.addListener("refreshUnreadCount", () => {
+      fetchUnreadCount();
+    });
+
     return () => {
       supabase.removeChannel(channel);
       subscription.remove();
+      refreshSub.remove();
     };
   }, [user]);
 

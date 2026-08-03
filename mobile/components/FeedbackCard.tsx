@@ -30,6 +30,35 @@ import { useColors } from "@/hooks/useColors";
 
 const { width } = Dimensions.get("window");
 
+interface StarItemProps {
+  index: number;
+  rating: number;
+  starScale: any;
+  onPress: () => void;
+  colors: any;
+}
+
+function StarItem({ index, rating, starScale, onPress, colors }: StarItemProps) {
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: starScale.value }],
+  }));
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.5}
+    >
+      <Animated.View style={animatedStyle}>
+        <Feather
+          name="star"
+          size={46}
+          color={index < rating ? "#f59e0b" : colors.border + "90"}
+        />
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
+
 interface FeedbackCardProps {
   booking: any;
   onSubmit: (rating: number, comment: string) => Promise<void>;
@@ -140,27 +169,16 @@ export function FeedbackCard({ booking, onSubmit, onSkip }: FeedbackCardProps) {
             </View>
 
             <View style={styles.starsContainer}>
-              {[0, 1, 2, 3, 4].map((index) => {
-                const animatedStyle = useAnimatedStyle(() => ({
-                  transform: [{ scale: starScales[index].value }],
-                }));
-
-                return (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => handleRating(index)}
-                    activeOpacity={0.5}
-                  >
-                    <Animated.View style={animatedStyle}>
-                      <Feather
-                        name="star"
-                        size={46}
-                        color={index < rating ? "#f59e0b" : colors.border + "90"}
-                      />
-                    </Animated.View>
-                  </TouchableOpacity>
-                );
-              })}
+              {[0, 1, 2, 3, 4].map((index) => (
+                <StarItem
+                  key={index}
+                  index={index}
+                  rating={rating}
+                  starScale={starScales[index]}
+                  onPress={() => handleRating(index)}
+                  colors={colors}
+                />
+              ))}
             </View>
 
             <TextInput

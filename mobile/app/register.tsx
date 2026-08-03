@@ -27,7 +27,7 @@ export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { register } = useAuth();
-  const { addAddress } = useAddress();
+  const { addAddress, fetchCurrentLocation } = useAddress();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -37,6 +37,9 @@ export default function RegisterScreen() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [geoCoords, setGeoCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [geoDetails, setGeoDetails] = useState<{ city: string; state: string; country: string; postalCode: string } | null>(null);
 
   // Email regex for inline real-time validation
   const isValidEmail = (text: string) => {
@@ -50,34 +53,24 @@ export default function RegisterScreen() {
     setError("");
     setLoading(true);
     try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setError("Permission to access location was denied");
-        setLoading(false);
+      const res = await fetchCurrentLocation();
+      if (!res.success) {
+        setError(res.error || "Failed to fetch current location. Please enter it manually.");
         return;
       }
 
-      let location = await Location.getCurrentPositionAsync({});
-      const { latitude, longitude } = location.coords;
-
-      // Reverse geocode via built-in Location API or direct Google API if configured
-      let reverseGeo = await Location.reverseGeocodeAsync({ latitude, longitude });
-      if (reverseGeo && reverseGeo.length > 0) {
-        const item = reverseGeo[0];
-        const readableAddress = [
-          item.streetNumber,
-          item.street,
-          item.city,
-          item.region,
-          item.postalCode,
-          item.country,
-        ]
-          .filter(Boolean)
-          .join(", ");
-
-        setAddress(readableAddress || `${latitude}, ${longitude}`);
-      } else {
-        setAddress(`${latitude}, ${longitude}`);
+      setAddress(res.address || "");
+      if (res.coords) {
+        setGeoCoords(res.coords);
+      }
+      if (res.data) {
+        const item = res.data;
+        setGeoDetails({
+          city: item.city || item.subregion || "",
+          state: item.region || "",
+          country: item.country || "",
+          postalCode: item.postalCode || "",
+        });
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -112,22 +105,21 @@ export default function RegisterScreen() {
       if (result.success) {
         // Create a default address item from the current location
         try {
-          let lat = 0;
-          let lng = 0;
-          let city = "";
-          let state = "";
-          let country = "";
-          let postalCode = "";
+          let lat = geoCoords?.latitude || 0;
+          let lng = geoCoords?.longitude || 0;
+          let city = geoDetails?.city || "";
+          let state = geoDetails?.state || "";
+          let country = geoDetails?.country || "";
+          let postalCode = geoDetails?.postalCode || "";
 
-          const permission = await Location.getForegroundPermissionsAsync();
-          if (permission.granted) {
-            const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-            if (loc && loc.coords) {
-              lat = loc.coords.latitude;
-              lng = loc.coords.longitude;
-              const geo = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
-              if (geo && geo.length > 0) {
-                const item = geo[0];
+          // If autofill wasn't run or failed, run a single background geocoded lookup
+          if (lat === 0 && lng === 0) {
+            const res = await fetchCurrentLocation();
+            if (res.success && res.coords) {
+              lat = res.coords.latitude;
+              lng = res.coords.longitude;
+              if (res.data) {
+                const item = res.data;
                 city = item.city || item.subregion || "";
                 state = item.region || "";
                 country = item.country || "";

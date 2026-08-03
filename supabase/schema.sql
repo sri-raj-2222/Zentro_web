@@ -345,6 +345,9 @@ create or replace function public.send_push_notification_trigger()
 returns trigger as $$
 declare
   v_push_token text;
+  v_type text;
+  v_channel_id text;
+  v_category text;
 begin
   -- Get the recipient's expo push token
   select expo_push_token into v_push_token
@@ -353,17 +356,39 @@ begin
 
   -- If the token exists and is valid, send it via pg_net (asynchronous http request)
   if v_push_token is not null and v_push_token <> '' then
+    -- Extract notification type from data
+    v_type := coalesce(new.data->>'type', '');
+    
+    -- Map notification type to Android notification channel ID
+    if v_type = 'booking_accepted' then
+      v_channel_id := 'booking-accepted';
+    elsif v_type = 'in_progress' then
+      v_channel_id := 'booking-in-progress';
+    elsif v_type = 'completed' then
+      v_channel_id := 'booking-completed';
+    elsif v_type = 'cancelled' then
+      v_channel_id := 'booking-cancelled';
+    else
+      v_channel_id := 'booking-accepted'; -- Default fallback channel
+    end if;
+
+    -- Set category identifier for iOS action buttons
+    v_category := 'BOOKING_UPDATE';
+
     perform net.http_post(
-      url := 'https://exp.host/--/api/v2/push/send',
-      headers := '{"Content-Type": "application/json"}'::jsonb,
-      body := jsonb_build_object(
+      'https://exp.host/--/api/v2/push/send'::text,
+      jsonb_build_object(
         'to', v_push_token,
         'title', new.title,
         'body', new.body,
         'sound', 'default',
+        'channelId', v_channel_id,
+        'categoryIdentifier', v_category,
         'data', coalesce(new.data, '{}'::jsonb)
-      ),
-      timeout_ms := 5000
+      )::jsonb,
+      '{}'::jsonb,
+      '{"Content-Type": "application/json"}'::jsonb,
+      5000::integer
     );
   end if;
   return new;
@@ -453,3 +478,43 @@ drop trigger if exists on_booking_updated on public.bookings;
 create trigger on_booking_updated
   after update on public.bookings
   for each row execute function public.handle_booking_update_notification();
+
+-- --------------------------------------------------------
+-- PROFILE READ-ONLY FIELDS SECURITY TRIGGER
+-- --------------------------------------------------------
+
+create or replace function public.protect_profile_readonly_fields()
+returns trigger as $$
+begin
+  -- If the executing user is not an admin, revert changes to sensitive fields
+  if not exists (
+    select 1 from public.profiles 
+    where id = auth.uid() and role = 'admin'
+  ) then
+    new.role := old.role;
+    new.total_feedbacks := old.total_feedbacks;
+    new.total_rating_sum := old.total_rating_sum;
+    new.average_rating := old.average_rating;
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public, pg_temp;
+
+drop trigger if exists on_profile_updated_security on public.profiles;
+create trigger on_profile_updated_security
+  before update on public.profiles
+  for each row execute function public.protect_profile_readonly_fields();
+
+-- --------------------------------------------------------
+-- ADDITIONAL PERFORMANCE INDEXES
+-- --------------------------------------------------------
+
+create index if not exists bookings_user_id_idx on public.bookings(user_id);
+create index if not exists bookings_worker_id_idx on public.bookings(worker_id);
+create index if not exists bookings_status_idx on public.bookings(status);
+create index if not exists bookings_created_at_idx on public.bookings(created_at desc);
+
+create index if not exists feedbacks_worker_id_idx on public.feedbacks(worker_id);
+create index if not exists feedbacks_customer_id_idx on public.feedbacks(customer_id);
+
+create index if not exists addresses_user_id_idx on public.addresses(user_id);

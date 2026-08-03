@@ -59,19 +59,6 @@ export default function AddressesScreen() {
     }
   }, [editId, addresses]);
 
-  // Debounced search for manual address selection
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    const delayDebounceFn = setTimeout(() => {
-      handleSearch(searchQuery);
-    }, 600);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
-
   async function handleSearch(query: string) {
     setIsSearching(true);
     try {
@@ -90,6 +77,19 @@ export default function AddressesScreen() {
       setIsSearching(false);
     }
   }
+
+  // Debounced search for manual address selection
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    const delayDebounceFn = setTimeout(() => {
+      handleSearch(searchQuery);
+    }, 600);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
 
   async function handleAutoDetect() {
     setIsLoadingLocation(true);

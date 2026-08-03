@@ -73,6 +73,56 @@ export default function AdminScreen() {
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [selectedWorkerFeedback, setSelectedWorkerFeedback] = useState<string | null>(null);
 
+  async function loadFeedbacks() {
+    setFeedbackLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("feedbacks")
+        .select(`
+          *,
+          customer:profiles!feedbacks_customer_id_fkey(name),
+          worker:profiles!feedbacks_worker_id_fkey(name)
+        `)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      setFeedbacks(data || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setFeedbackLoading(false);
+    }
+  }
+
+  async function loadUsers() {
+    const { data: profiles, error } = await supabase.from('profiles').select('*');
+    if (error) {
+      console.error("Error fetching users:", error);
+      return;
+    }
+
+    const all: any[] = (profiles || []).map((p) => ({
+      id: p.id,
+      name: p.name || "Unknown",
+      email: p.email || "Registered User", 
+      phone: p.phone || "N/A",
+      role: p.role as any,
+      average_rating: p.average_rating || 0,
+      total_feedbacks: p.total_feedbacks || 0,
+    }));
+
+    setUsers(all);
+
+    const workers = all.filter((u) => u.role === "worker");
+    const rates: Record<string, string> = {};
+    workers.forEach((w) => { rates[w.id] = getCommission(w.id).toString(); });
+    setEditingRates(rates);
+
+    if (workers.length > 0 && !selectedWorkerId) {
+      setSelectedWorkerId(workers[0].id);
+    }
+  }
+
   useEffect(() => {
     loadUsers();
   }, []);
@@ -113,58 +163,6 @@ export default function AdminScreen() {
       supabase.removeChannel(profileChannel);
     };
   }, []); // Only once on mount
-
-  async function loadFeedbacks() {
-    setFeedbackLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("feedbacks")
-        .select(`
-          *,
-          customer:profiles!feedbacks_customer_id_fkey(name),
-          worker:profiles!feedbacks_worker_id_fkey(name)
-        `)
-        .order("created_at", { ascending: false });
-      
-      if (error) throw error;
-      setFeedbacks(data || []);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setFeedbackLoading(false);
-    }
-  }
-
-
-
-  async function loadUsers() {
-    const { data: profiles, error } = await supabase.from('profiles').select('*');
-    if (error) {
-      console.error("Error fetching users:", error);
-      return;
-    }
-
-    const all: any[] = (profiles || []).map((p) => ({
-      id: p.id,
-      name: p.name || "Unknown",
-      email: p.email || "Registered User", 
-      phone: p.phone || "N/A",
-      role: p.role as any,
-      average_rating: p.average_rating || 0,
-      total_feedbacks: p.total_feedbacks || 0,
-    }));
-
-    setUsers(all);
-
-    const workers = all.filter((u) => u.role === "worker");
-    const rates: Record<string, string> = {};
-    workers.forEach((w) => { rates[w.id] = getCommission(w.id).toString(); });
-    setEditingRates(rates);
-
-    if (workers.length > 0 && !selectedWorkerId) {
-      setSelectedWorkerId(workers[0].id);
-    }
-  }
 
   async function handleCreateWorker() {
     if (!nwName || !nwEmail || !nwPhone || !nwPassword) {

@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Platform,
@@ -27,9 +27,9 @@ export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(40)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(0));
+  const [slideAnim] = useState(() => new Animated.Value(40));
+  const [scaleAnim] = useState(() => new Animated.Value(0.8));
 
   useEffect(() => {
     const nativeDriver = Platform.OS !== "web";

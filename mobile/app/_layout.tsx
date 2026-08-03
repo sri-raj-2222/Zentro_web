@@ -20,6 +20,7 @@ import { ServicePricesProvider } from "@/context/ServicePricesContext";
 import { AddressProvider } from "@/context/AddressContext";
 import { useAuth } from "@/context/AuthContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import InAppBanner from "@/components/InAppBanner";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -30,24 +31,29 @@ function RootLayoutNav() {
   usePushNotifications(user?.id);
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="welcome" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="login"
-        options={{ headerShown: false, presentation: "fullScreenModal" }}
-      />
-      <Stack.Screen
-        name="register"
-        options={{ headerShown: false, presentation: "fullScreenModal" }}
-      />
-      <Stack.Screen name="book" options={{ headerShown: false }} />
-      <Stack.Screen name="addresses" options={{ headerShown: false, presentation: "modal" }} />
-      <Stack.Screen name="forgot-password" options={{ headerShown: false, presentation: "fullScreenModal" }} />
-      <Stack.Screen name="charges" options={{ headerShown: false }} />
-      <Stack.Screen name="notifications" options={{ headerShown: false, presentation: "modal" }} />
-    </Stack>
+    <>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="welcome" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="login"
+          options={{ headerShown: false, presentation: "fullScreenModal" }}
+        />
+        <Stack.Screen
+          name="register"
+          options={{ headerShown: false, presentation: "fullScreenModal" }}
+        />
+        <Stack.Screen name="book" options={{ headerShown: false }} />
+        <Stack.Screen name="addresses" options={{ headerShown: false, presentation: "modal" }} />
+        <Stack.Screen name="forgot-password" options={{ headerShown: false, presentation: "fullScreenModal" }} />
+        <Stack.Screen name="charges" options={{ headerShown: false }} />
+        <Stack.Screen name="notifications" options={{ headerShown: false, presentation: "modal" }} />
+        <Stack.Screen name="bookings/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="settings/notifications" options={{ headerShown: false }} />
+      </Stack>
+      <InAppBanner />
+    </>
   );
 }
 

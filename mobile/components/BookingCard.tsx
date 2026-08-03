@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
 import React from "react";
 import {
   Linking,
@@ -46,6 +47,7 @@ export function BookingCard({
   onCancel,
 }: BookingCardProps) {
   const colors = useColors();
+  const router = useRouter();
   const statusColor = STATUS_COLORS[booking.status];
 
   function openLocation() {
@@ -69,7 +71,10 @@ export function BookingCard({
   }
 
   return (
-    <View
+    <TouchableOpacity
+      activeOpacity={0.9}
+      delayPressIn={0}
+      onPress={() => router.push(`/bookings/${booking.id}`)}
       style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
     >
       <View style={styles.header}>
@@ -170,7 +175,7 @@ export function BookingCard({
           <Text style={styles.actionBtnText}>Cancel Booking</Text>
         </TouchableOpacity>
       )}
-    </View>
+    </TouchableOpacity>
   );
 }
 

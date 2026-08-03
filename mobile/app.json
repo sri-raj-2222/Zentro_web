@@ -22,6 +22,7 @@
     },
     "android": {
       "package": "com.sri_raj_2222.zentro",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"

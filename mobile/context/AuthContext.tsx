@@ -42,6 +42,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  async function fetchProfile(authUser: User) {
+    try {
+      const { data: profileData, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", authUser.id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      let data = profileData;
+
+      if (!data) {
+        // Automatically insert a profile record if none exists yet
+        const { data: newProfile, error: insertError } = await supabase
+          .from("profiles")
+          .insert({
+            id: authUser.id,
+            email: authUser.email,
+            name: authUser.user_metadata?.name || "Unknown",
+            role: "user",
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        data = newProfile;
+      }
+
+      if (data) {
+        setUser({
+          id: data.id,
+          name: data.name,
+          email: authUser.email || "",
+          phone: data.phone || "",
+          role: data.role as UserRole,
+          avatar: data.avatar_url,
+          address: data.address,
+          availabilityStatus: data.availability_status as any,
+          average_rating: data.average_rating || 0,
+          total_feedbacks: data.total_feedbacks || 0,
+        });
+      }
+    } catch (e) {
+      console.error("Error fetching profile", e);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   useEffect(() => {
     // Check active session
     supabase.auth.getSession()
@@ -100,53 +150,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       authListener.subscription.unsubscribe();
     };
   }, []);
-
-  async function fetchProfile(authUser: User) {
-    try {
-      let { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", authUser.id)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      if (!data) {
-        // Automatically insert a profile record if none exists yet
-        const { data: inserted, error: insertError } = await supabase
-          .from("profiles")
-          .insert({
-            id: authUser.id,
-            name: authUser.user_metadata?.full_name || "New User",
-            role: "user",
-          })
-          .select()
-          .maybeSingle();
-
-        if (insertError) throw insertError;
-        if (inserted) data = inserted;
-      }
-
-      if (data) {
-        setUser({
-          id: data.id,
-          name: data.name,
-          email: authUser.email || "",
-          phone: data.phone || "",
-          role: data.role as UserRole,
-          avatar: data.avatar_url,
-          address: data.address,
-          availabilityStatus: data.availability_status as any,
-          average_rating: data.average_rating || 0,
-          total_feedbacks: data.total_feedbacks || 0,
-        });
-      }
-    } catch (e) {
-      console.error("Error fetching profile", e);
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   async function login(
     email: string,

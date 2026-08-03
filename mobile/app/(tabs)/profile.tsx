@@ -581,9 +581,22 @@ export default function ProfileScreen() {
         </View>
       )}
 
+      {/* Notification Preferences */}
+      <TouchableOpacity
+        style={[styles.saveBtn, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, marginTop: 16 }]}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          router.push("/settings/notifications" as any);
+        }}
+        activeOpacity={0.85}
+      >
+        <Feather name="bell" size={18} color={colors.foreground} />
+        <Text style={[styles.saveBtnText, { color: colors.foreground }]}>Notification Preferences</Text>
+      </TouchableOpacity>
+
       {/* Logout */}
       <TouchableOpacity
-        style={[styles.logoutBtn, { borderColor: "#ef4444" + "40" }]}
+        style={[styles.logoutBtn, { borderColor: "#ef4444" + "40", marginTop: 8 }]}
         onPress={handleLogout}
         activeOpacity={0.85}
       >
