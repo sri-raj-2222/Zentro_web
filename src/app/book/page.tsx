@@ -149,11 +149,13 @@ export default function BookServicePage() {
 
   // Price computation logic
   const calculatePrice = () => {
-    if (!selectedSubType) return 0;
     if (selectedService === "water_tank") {
       // cost per liter * capacity
-      return Math.round(selectedSubType.price * tankCapacity);
+      const tankItem = subTypes.find((s) => s.serviceName === "tank");
+      const costPerLiter = tankItem ? tankItem.price : 0.5;
+      return Math.round(costPerLiter * tankCapacity);
     }
+    if (!selectedSubType) return 0;
     return selectedSubType.price;
   };
 
@@ -339,32 +341,36 @@ export default function BookServicePage() {
               })}
             </div>
 
-            <h2 className={styles.stepTitle} style={{ marginTop: 32 }}>Select Service Option</h2>
-            <div className={styles.subtypeGrid}>
-              {activeSubtypes.map((st) => {
-                const isSel = selectedSubType?.id === st.id;
-                return (
-                  <button
-                    key={st.id}
-                    onClick={() => setSelectedSubType(st)}
-                    className={`${styles.subtypeItem} ${isSel ? styles.activeSubtypeItem : ""}`}
-                  >
-                    {isSel && <div className={styles.checkPin}><Check size={12} /></div>}
-                    {st.imageUrl && (
-                      <div className={styles.subtypeImageWrap}>
-                        <img src={st.imageUrl} alt={st.typeName} className={styles.subtypeImage} />
-                      </div>
-                    )}
-                    <span className={styles.subtypeName}>{st.typeName}</span>
-                    {selectedService === "water_tank" ? (
-                      <span className={styles.subtypePrice}>₹{st.price} / Liter</span>
-                    ) : (
-                      <span className={styles.subtypePrice}>₹{st.price}</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            {selectedService !== "water_tank" && activeSubtypes.length > 0 && (
+              <>
+                <h2 className={styles.stepTitle} style={{ marginTop: 32 }}>Select Service Option</h2>
+                <div className={styles.subtypeGrid}>
+                  {activeSubtypes.map((st) => {
+                    const isSel = selectedSubType?.id === st.id;
+                    return (
+                      <button
+                        key={st.id}
+                        onClick={() => setSelectedSubType(st)}
+                        className={`${styles.subtypeItem} ${isSel ? styles.activeSubtypeItem : ""}`}
+                      >
+                        {isSel && <div className={styles.checkPin}><Check size={12} /></div>}
+                        {st.imageUrl && (
+                          <div className={styles.subtypeImageWrap}>
+                            <img src={st.imageUrl} alt={st.typeName} className={styles.subtypeImage} />
+                          </div>
+                        )}
+                        <span className={styles.subtypeName}>{st.typeName}</span>
+                        {selectedService === "water_tank" ? (
+                          <span className={styles.subtypePrice}>₹{st.price} / Liter</span>
+                        ) : (
+                          <span className={styles.subtypePrice}>₹{st.price}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
             {selectedService === "water_tank" && (
               <div className={styles.tankInputWrap}>
@@ -396,7 +402,7 @@ export default function BookServicePage() {
               <div></div>
               <button 
                 onClick={() => setStep(2)}
-                disabled={!selectedSubType}
+                disabled={selectedService === "water_tank" ? !tankCapacity : !selectedSubType}
                 className={styles.nextBtn}
               >
                 <span>Continue to Location</span>

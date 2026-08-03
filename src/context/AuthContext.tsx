@@ -46,40 +46,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function fetchProfile(authUser: User) {
     try {
-      const { data: profileData, error } = await supabase
+      const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", authUser.id)
         .maybeSingle();
 
-      if (error) throw error;
-
       let data = profileData;
 
       if (!data) {
         // Automatically insert a profile record if none exists yet
-        const { data: newProfile, error: insertError } = await supabase
+        const { data: newProfile } = await supabase
           .from("profiles")
           .insert({
             id: authUser.id,
-            email: authUser.email,
-            name: authUser.user_metadata?.name || "Unknown",
+            email: authUser.email || "",
+            name: authUser.user_metadata?.name || authUser.email?.split("@")[0] || "User",
             role: "user",
           })
           .select()
-          .single();
+          .maybeSingle();
 
-        if (insertError) throw insertError;
-        data = newProfile;
+        data = newProfile || {
+          id: authUser.id,
+          name: authUser.user_metadata?.name || authUser.email?.split("@")[0] || "User",
+          email: authUser.email || "",
+          phone: "",
+          role: "user",
+          avatar_url: undefined,
+          address: undefined,
+          availability_status: "available",
+          average_rating: 0,
+          total_feedbacks: 0,
+        };
       }
 
       if (data) {
         setUser({
           id: data.id,
-          name: data.name,
-          email: authUser.email || "",
+          name: data.name || "User",
+          email: authUser.email || data.email || "",
           phone: data.phone || "",
-          role: data.role as UserRole,
+          role: (data.role as UserRole) || "user",
           avatar: data.avatar_url,
           address: data.address,
           availabilityStatus: data.availability_status as any,
@@ -89,6 +97,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) {
       console.error("Error fetching profile", e);
+      // Fallback user state so app doesn't crash or lock user out
+      setUser({
+        id: authUser.id,
+        name: authUser.user_metadata?.name || authUser.email?.split("@")[0] || "User",
+        email: authUser.email || "",
+        phone: "",
+        role: "user",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -164,24 +180,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) return { success: false, error: error.message };
       if (!data.user) return { success: false, error: "Login failed" };
 
-      // Fetch entire profile to set state synchronously
-      const { data: profile, error: profileError } = await supabase
+      // Fetch profile safely using maybeSingle
+      const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", data.user.id)
-        .single();
-        
-      if (profileError || !profile) {
-        await supabase.auth.signOut();
-        return { success: false, error: "Your account setup was interrupted. Please register a brand new email." };
+        .maybeSingle();
+
+      let profile = profileData;
+
+      if (!profile) {
+        // Try creating missing profile automatically
+        const { data: newProfile } = await supabase
+          .from("profiles")
+          .upsert({
+            id: data.user.id,
+            email: data.user.email || email,
+            name: data.user.user_metadata?.name || email.split("@")[0] || "User",
+            role: "user",
+          })
+          .select()
+          .maybeSingle();
+
+        profile = newProfile || {
+          id: data.user.id,
+          name: data.user.user_metadata?.name || email.split("@")[0] || "User",
+          email: data.user.email || email,
+          phone: "",
+          role: "user",
+        };
       }
 
       setUser({
         id: profile.id,
-        name: profile.name,
-        email: data.user.email || "",
+        name: profile.name || "User",
+        email: data.user.email || email,
         phone: profile.phone || "",
-        role: profile.role as UserRole,
+        role: (profile.role as UserRole) || "user",
         avatar: profile.avatar_url,
         address: profile.address,
         availabilityStatus: profile.availability_status as any,
@@ -215,13 +250,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Save to profiles
       const { error: profileError } = await supabase.from("profiles").upsert({
         id: data.user.id,
+        email: email.toLowerCase().trim(),
         name,
         phone,
         role,
         address,
       });
 
-      if (profileError) return { success: false, error: profileError.message };
+      if (profileError) {
+        console.warn("Profile upsert warning during registration:", profileError.message);
+      }
 
       setUser({
         id: data.user.id,
